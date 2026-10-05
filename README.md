@@ -8,7 +8,7 @@
 
 ## 현재 상태
 
-프로젝트 초기 단계이며, 아직 가계부 애플리케이션 서버와 화면 코드는 없습니다. 현재 Docker Compose는 문서 검증 스크립트 실행에 사용합니다.
+프로젝트 초기 단계입니다. 서버 없는 목 UI에서 화면과 거래 흐름을 확인할 수 있습니다. API 서버·에이전트·DB는 아직 구현되지 않았고, 현재 Docker Compose는 문서 검증 스크립트 실행에 사용합니다.
 
 ## 프로젝트 구성
 
@@ -27,6 +27,10 @@ account_book/
 ├── .dockerignore
 ├── .devcontainer/
 │   └── devcontainer.json
+├── ui/
+│   ├── src/
+│   ├── tests/
+│   └── package.json
 ├── scripts/
 │   ├── validate_docs.py
 │   └── run_mock_ui.sh
@@ -79,11 +83,11 @@ docker compose run --rm scripts python scripts/validate_docs.py
 
 GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사용합니다. 개발 이미지에는 Python, `pytest`, Git, SSH 클라이언트가 들어 있으며, 작업 공간을 일반 사용자 `vscode`로 엽니다. 컨테이너 생성 후 Git 실행, 테스트, 문서 검증을 확인합니다. GitHub 인증은 Codespaces가 제공하는 방법을 사용하고 키를 이미지에 복사하지 않습니다.
 
-서버 없는 목 UI 개발을 위해 개발 컨테이너에 Node.js 24와 npm을 추가하고 Vite용 `5173` 포트를 전달합니다. 실제 UI 프로젝트가 만들어진 뒤에는 `scripts/run_mock_ui.sh`로 Codespaces 접속 주소를 Vite에 설정해 실행합니다. 실행 명령과 목 데이터 경계는 [목 UI 개발 환경](ui_docs/mock-ui-development.md)에 정리했습니다. 현재는 UI 코드나 npm 패키지를 추가하지 않았습니다.
+서버 없는 [목 UI](ui/README.md)는 React·TypeScript·Vite와 shadcn/ui로 만들었습니다. 개발 컨테이너는 Node.js 24와 npm을 준비하고 UI 의존성 설치·테스트·빌드를 확인하며 `5173` 포트를 전달합니다. 컨테이너 터미널에서 `bash scripts/run_mock_ui.sh`를 실행하면 Codespaces 접속 주소를 Vite에 맞게 설정합니다. 거래는 브라우저 메모리의 목 데이터에만 반영되며 새로고침하면 초기화됩니다. 자세한 실행 방법과 범위는 [목 UI 개발 환경](ui_docs/mock-ui-development.md)에 있습니다.
 
 ## 개발 및 실행 계획
 
-애플리케이션 구현이 진행되면 서비스별 의존성과 실행 방법을 추가합니다. 현재 실행할 수 있는 가계부 애플리케이션은 없습니다.
+목 UI는 실행할 수 있지만 실제 가계부 서버는 아직 없습니다. 서버와 에이전트 구현이 진행되면 서비스별 의존성과 실행 방법을 추가합니다.
 
 ## 문서 업데이트
 

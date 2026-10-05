@@ -1,0 +1,45 @@
+.heading-add { height: 36px; padding: 0 15px; }
+.transaction-panel { overflow: hidden; }
+.transaction-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 23px 25px; border-bottom: 1px solid #ecf0ec; }
+.month-switcher.compact { border-color: #edf1ec; box-shadow: none; }
+.filters { display: flex; gap: 8px; align-items: center; }
+.filter-icon { color: #9aaa9e; margin-right: 2px; }
+.filter-select { min-width: 125px; height: 37px; border-color: #e8ede8; }
+.transaction-list-heading { display: flex; justify-content: space-between; padding: 28px 26px 16px; align-items: baseline; }
+.transaction-list-heading strong { color: #34483b; font-size: 17px; letter-spacing: -.04em; }
+.transaction-list-heading span { font-size: 11px; color: #9cad9f; }
+.transaction-table-head { display: grid; grid-template-columns: minmax(230px,1fr) 120px 135px 100px; padding: 13px 27px; background: #fafbf9; color: #a1aea4; font-size: 11px; font-weight: 700; }
+.transaction-table-head span:nth-child(3) { text-align: right; }
+.transaction-row { display: grid; grid-template-columns: 40px minmax(170px,1fr) 120px 135px 100px; align-items: center; min-height: 76px; padding: 11px 20px 11px 27px; border-top: 1px solid #f0f2ef; column-gap: 10px; }
+.transaction-icon { width: 37px; height: 37px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; font-weight: 800; }
+.transaction-description { min-width: 0; }
+.transaction-description strong { color: #455449; font-size: 12px; display: block; }
+.transaction-description small { color: #a4b2a7; font-size: 10px; display: block; margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.transaction-date { font-size: 11px; color: #8da094; }
+.transaction-amount { text-align: right; font-size: 12px; color: #415347; }
+.transaction-amount.income { color: #4e9770; }
+.row-actions { display: flex; opacity: .45; justify-content: end; }
+.row-actions button { color: #789083; font-size: 10px; padding: 0 5px; }
+.transaction-row:hover { background: #fbfdfb; }
+.transaction-row:hover .row-actions,.row-actions:focus-within { opacity: 1; }
+.load-more { display: flex; justify-content: center; padding: 21px; border-top: 1px solid #edf0ed; }
+.list-state { min-height: 310px; display: flex; align-items: center; flex-direction: column; justify-content: center; text-align: center; color: #9baba0; gap: 9px; font-size: 12px; }
+.list-state strong { color: #4c6252; font-size: 14px; }
+.list-state p { margin: 0 0 9px; }
+.form-dialog { max-width: 490px; max-height: 90vh; overflow-y: auto; }
+.transaction-form { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 15px; margin-top: 7px; }
+.form-field { display: flex; flex-direction: column; gap: 7px; }
+.form-field:nth-of-type(5),.form-field:nth-of-type(6),.form-actions,.form-error { grid-column: 1 / -1; }
+.form-field label { color: #485c4b; font-size: 12px; font-weight: 700; }
+.form-field input,.form-field textarea,.form-field [data-slot="select-trigger"] { height: 38px; font-size: 12px; }
+.form-field textarea { height: auto; resize: vertical; }
+.required { color: #e3957f; }
+.optional { font-size: 10px; color: #9baa9f; font-weight: 500; margin-left: 3px; }
+.amount-input { position: relative; }
+.amount-input input { padding-right: 30px; }
+.amount-input > span { position: absolute; right: 12px; top: 10px; color: #9baa9f; font-size: 12px; }
+.field-error,.form-error { color: #bf544b; font-size: 11px; }
+.form-error { background: #fff1ef; border: 1px solid #f4d9d5; padding: 10px; border-radius: 7px; }
+.form-actions { margin-top: 8px; }
+@media (max-width: 900px) { .transaction-toolbar { flex-direction: column; align-items: stretch; } .filters { justify-content: end; } .transaction-table-head { display: none; } .transaction-row { grid-template-columns: 40px minmax(120px,1fr) 100px; row-gap: 2px; } .transaction-date { grid-column: 2; grid-row: 2; } .transaction-amount { grid-column: 3; grid-row: 1; } .row-actions { grid-column: 3; grid-row: 2; opacity: 1; } }
+@media (max-width: 540px) { .heading-add { align-self: start; } .transaction-toolbar { padding: 18px; } .filters { justify-content: stretch; } .filter-icon { display: none; } .filter-select { flex: 1; min-width: 0; } .transaction-list-heading { padding: 21px 18px 13px; } .transaction-row { padding: 12px 14px; grid-template-columns: 37px minmax(100px,1fr) 95px; column-gap: 8px; } .transaction-amount { font-size: 11px; } .transaction-form { grid-template-columns: 1fr; } .form-field:nth-of-type(5),.form-field:nth-of-type(6),.form-actions,.form-error { grid-column: auto; } }
