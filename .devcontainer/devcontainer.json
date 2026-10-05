@@ -1,0 +1,11 @@
+{
+  "name": "Account Book",
+  "build": {
+    "dockerfile": "../Dockerfile.dev",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "vscode",
+  "overrideCommand": true,
+  "postCreateCommand": "git --version && git rev-parse --is-inside-work-tree && python -m pytest && python scripts/validate_docs.py"
+}

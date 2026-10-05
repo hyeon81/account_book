@@ -1,0 +1,34 @@
+services:
+  scripts:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /workspace
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - type: bind
+        source: ./README.md
+        target: /workspace/README.md
+        read_only: true
+      - type: bind
+        source: ./docs
+        target: /workspace/docs
+        read_only: true
+      - type: bind
+        source: ./ui_docs
+        target: /workspace/ui_docs
+        read_only: true
+      - type: bind
+        source: ./scripts
+        target: /workspace/scripts
+        read_only: true
+      - type: bind
+        source: ./tests
+        target: /workspace/tests
+        read_only: true
+      - type: bind
+        source: ./pytest.ini
+        target: /workspace/pytest.ini
+        read_only: true
+    command: ["python", "scripts/validate_docs.py"]
