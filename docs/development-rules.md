@@ -43,28 +43,34 @@ UI의 `domain`에는 화면에서 쓰는 거래 개념과 순수 계산만 둔�
 
 ```text
 server/
+├── pyproject.toml
 ├── src/
-│   ├── domain/transaction.py
-│   ├── application/create_transaction.py
-│   ├── infrastructure/postgres_transaction_repository.py
-│   └── presentation/transaction_routes.py
+│   └── account_book_server/
+│       ├── domain/transaction.py
+│       ├── application/create_transaction.py
+│       ├── infrastructure/postgres_transaction_repository.py
+│       └── presentation/transaction_routes.py
 └── tests/
-    ├── domain/test_transaction.py
-    ├── application/test_create_transaction.py
-    ├── infrastructure/test_postgres_transaction_repository.py
-    └── presentation/test_transaction_routes.py
+    └── account_book_server/
+        ├── domain/test_transaction.py
+        ├── application/test_create_transaction.py
+        ├── infrastructure/test_postgres_transaction_repository.py
+        └── presentation/test_transaction_routes.py
 
 agent/
+├── pyproject.toml
 ├── src/
-│   ├── domain/transaction_draft.py
-│   ├── application/prepare_transaction.py
-│   ├── infrastructure/litellm_client.py
-│   └── presentation/chat_routes.py
+│   └── account_book_agent/
+│       ├── domain/transaction_draft.py
+│       ├── application/prepare_transaction.py
+│       ├── infrastructure/litellm_client.py
+│       └── presentation/chat_routes.py
 └── tests/
-    ├── domain/test_transaction_draft.py
-    ├── application/test_prepare_transaction.py
-    ├── infrastructure/test_litellm_client.py
-    └── presentation/test_chat_routes.py
+    └── account_book_agent/
+        ├── domain/test_transaction_draft.py
+        ├── application/test_prepare_transaction.py
+        ├── infrastructure/test_litellm_client.py
+        └── presentation/test_chat_routes.py
 
 ui/
 ├── src/
@@ -87,3 +93,4 @@ ui/
 - 새 모듈의 의존성 방향이 위 계층 규칙을 따른다.
 - 새 동작에 필요한 테스트가 `src`와 대응되는 `tests` 경로에 있다.
 - 해당 서비스의 테스트와 정적 검사, 빌드가 통과한다. 실행할 수 없는 검사는 변경 설명에 이유를 남긴다.
+- 문서를 변경했다면 `python scripts/validate_docs.py`를 실행한다. 이 검사는 문서 간 참조와 예시의 형식을 확인하며 실제 서비스 동작까지 증명하지는 않는다.

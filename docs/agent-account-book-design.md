@@ -5,8 +5,8 @@
 ## 설계의 전제
 
 - UI 서버, API 서버, 에이전트, DB는 별도 서비스로 구성하고 Docker Compose로 함께 실행한다.
-- 초기 샘플은 로컬 실행, 한국어, 원화, Asia/Seoul 시간대를 기준으로 한다.
-- 기술 스택은 아래 표를 기준으로 한다. LLM 제공자와 모델, 로그인 방식은 아직 확정하지 않는다.
+- 초기 샘플은 로컬 단일 사용자, 한국어, 원화, Asia/Seoul 시간대를 기준으로 한다. 로그인 기능은 초기 범위에 포함하지 않는다.
+- 기술 스택은 아래 표를 기준으로 하고 AI 제공자는 OpenAI로 한다. 사용할 모델 ID는 구현 시 확정한다.
 - 아래 경로, API, 환경변수 이름은 구현을 위한 제안이며 현재 존재하는 기능이 아니다.
 - 참고 대상으로 지정된 [week06-agent-lab 저장소](https://github.com/2026-ai-service-engineering-a/week06-agent-lab)는 2026년 10월 5일에 접근하여 `main`의 커밋 `3311fd14e3fe6a20d2aa5b0cce975ea89b3c5e10` 기준으로 파일 목록, README, Compose, 의존성, 모델 설정 코드를 확인했다. 실제 `.env` 및 `.env.sample` 파일은 읽지 않았다.
 
@@ -23,7 +23,7 @@
 | 에이전트 모듈 | `config.py`, `tools.py`, `react.py`, `reflexion.py`, `harness.py`, `main.py` | 모델 설정, 가계부 도구, 호출 루프, 실행 제한을 분리하는 구조를 참고 |
 | 테스트 | README에서 LLM mock을 사용하는 키와 네트워크 없는 테스트 안내 | 모델 mock 테스트와 거래 저장 및 중복 방지 통합 테스트 |
 
-가계부에는 참고 저장소의 환경 설정과 에이전트 모듈 분리 방식을 적용한다. 단일 실습 컨테이너 구성은 사용자가 요청한 UI·서버·에이전트 분리 구조로 확장한다. LiteLLM Python SDK를 에이전트에 사용한다. 아래의 공통 `LLM_API_KEY` 변수는 제안이며, 참고 저장소처럼 제공자별 키를 사용할지는 구현 시 결정한다.
+가계부에는 참고 저장소의 환경 설정과 에이전트 모듈 분리 방식을 적용한다. 단일 실습 컨테이너 구성은 사용자가 요청한 UI·서버·에이전트 분리 구조로 확장한다. LiteLLM Python SDK를 에이전트에 사용하고 OpenAI 모델을 호출한다. API 키 이름은 [OpenAI 공식 시작 안내](https://developers.openai.com/api/docs/quickstart)에 따라 `OPENAI_API_KEY`로 한다.
 
 ## 시스템 구성
 
@@ -36,7 +36,7 @@ flowchart LR
         agent[agent: FastAPI + LiteLLM<br/>자연어 처리·도구 호출]
         db[(db: PostgreSQL<br/>거래·카테고리·초안)]
     end
-    llm[외부 LLM 제공자]
+    llm[OpenAI API]
 
     browser -->|화면 및 /api 요청| ui
     ui -->|/api 프록시| server
@@ -59,7 +59,7 @@ flowchart LR
 
 Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 같은 주소의 `/api` 요청을 API 서버로 전달하기 위해서다. Vite는 개발과 빌드에 사용하고, 배포용 UI 컨테이너에서는 Nginx가 화면과 프록시를 맡는다. 초기 로컬 개발에서는 Vite 개발 서버를 사용할 수 있지만, Compose로 실행하는 샘플의 UI 서비스는 Nginx를 기준으로 한다.
 
-서비스는 Docker Compose로 함께 실행한다. 구체적인 이미지 태그와 라이브러리 버전은 구현하면서 호환성을 검증한 뒤 고정한다. LLM 제공자와 모델은 환경변수로 선택하며 `agent`에서만 API 키를 사용한다. 이 선택은 [Vite의 React·TypeScript 템플릿](https://vite.dev/guide/), [Nginx의 정적 파일 제공과 프록시 문서](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), [FastAPI의 컨테이너 배포 문서](https://fastapi.tiangolo.com/deployment/docker/), [SQLAlchemy ORM](https://docs.sqlalchemy.org/en/20/orm/quickstart.html), [Alembic](https://alembic.sqlalchemy.org/en/latest/), [LiteLLM Python SDK](https://docs.litellm.ai/docs/)를 기준으로 한 설계 결정이다.
+서비스는 Docker Compose로 함께 실행한다. 구체적인 이미지 태그와 라이브러리 버전은 구현하면서 호환성을 검증한 뒤 고정한다. OpenAI 모델은 환경변수로 선택하며 `agent`에서만 API 키를 사용한다. 이 선택은 [Vite의 React·TypeScript 템플릿](https://vite.dev/guide/), [Nginx의 정적 파일 제공과 프록시 문서](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), [FastAPI의 컨테이너 배포 문서](https://fastapi.tiangolo.com/deployment/docker/), [SQLAlchemy ORM](https://docs.sqlalchemy.org/en/20/orm/quickstart.html), [Alembic](https://alembic.sqlalchemy.org/en/latest/), [LiteLLM Python SDK](https://docs.litellm.ai/docs/)를 기준으로 한 설계 결정이다.
 
 ## 사용자가 보는 가계부
 
@@ -87,7 +87,7 @@ Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 �
 | API 서버 | 입력 검증, 사용자 범위 제한, 거래 저장, 조회, 합계 계산, 등록 확인 처리를 담당한다. 서비스 이름은 `server`로 유지한다. |
 | 에이전트 | 자연어 의도 파악, 거래 정보 추출, 조회 도구 선택, 결과 설명을 담당한다. |
 | 데이터베이스 | 거래와 카테고리, 등록 초안 및 처리 상태를 영속적으로 저장한다. |
-| LLM 제공자 | 에이전트가 요청한 자연어 해석과 응답 생성을 수행한다. |
+| OpenAI API | 에이전트가 요청한 자연어 해석과 응답 생성을 수행한다. |
 
 화면은 `브라우저 → UI 서버`에서 제공한다. 대화 요청 경로는 `브라우저 → UI 서버의 /api 프록시 → API 서버 → 에이전트 → API 서버의 내부 도구 API → 데이터베이스`다. 에이전트는 필요한 경우 외부 LLM을 호출한다. 사용자의 확인 요청은 `브라우저 → UI 서버의 /api 프록시 → API 서버 → 데이터베이스`로 처리한다. API 서버는 에이전트의 결과도 다시 검증한다.
 
@@ -130,7 +130,7 @@ LLM 호출이 실패해도 직접 입력과 일반 통계 조회는 사용할 �
 | `list_transactions` | 기간과 카테고리 조건으로 거래를 조회한다. 페이지 크기를 제한한다. |
 | `get_summary` | 서버가 계산한 기간별 수입, 지출, 차액과 카테고리별 합계를 반환한다. |
 
-사용자용 API는 `POST /api/chat`, `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/{id}`, `GET /api/summary`, `POST /api/drafts/{id}/confirm`을 제안한다. 내부 도구 API는 `/internal/tools/...` 아래에 별도로 둔다. 사용자용 경로와 내부 도구 경로는 서로 다른 인증을 적용한다.
+사용자용 API는 `GET /api/categories`, `POST /api/chat`, `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/{id}`, `GET /api/summary`, `POST /api/drafts/{id}/confirm`을 제안한다. 내부 도구 API는 `/internal/tools/...` 아래에 별도로 둔다. 초기 로컬 사용자용 경로에는 로그인을 넣지 않고 내부 경로에는 서비스 토큰을 적용한다. 경로별 상태 코드와 오류 응답은 [API 계약](api-contract.md)에 정리한다.
 
 ## 입력과 출력 예시
 
@@ -267,7 +267,7 @@ UI는 초안을 보여주고 사용자가 확인하거나 수정하게 한다. �
 
 원화 금액은 양의 정수로 저장하고 수입과 지출을 별도 유형으로 구분한다. 부동소수점으로 금액을 계산하지 않는다. 거래 날짜는 사용자가 지정한 현지 날짜로, 생성 및 수정 시각은 UTC로 저장한다. 초안에는 모델의 추측이 아닌 검증된 필드를 저장한다.
 
-초기 샘플은 단일 사용자로 시작할 수 있지만 사용자 ID는 서버가 부여한다. 외부 공개 또는 다중 사용자 단계에서는 로그인과 사용자별 접근 제어를 구현한 뒤 공개한다. 대화 원문 저장은 초기 필수 기능으로 두지 않는다.
+초기 샘플은 로컬 단일 사용자로 실행한다. 사용자 ID는 API 서버가 내부적으로 고정된 값으로 부여하고 브라우저나 모델 입력에서 받지 않는다. UI 포트는 `127.0.0.1`에만 공개한다. 외부 공개 또는 다중 사용자 단계에서는 로그인과 사용자별 접근 제어를 설계하고 구현한 뒤 공개한다. 대화 원문 저장은 초기 필수 기능으로 두지 않는다.
 
 ## Docker Compose 구성안
 
@@ -300,9 +300,8 @@ DB healthcheck와 서버의 연결 재시도를 구성한다. 스키마 마이�
 | `AGENT_BASE_URL` | 서버 | 에이전트 내부 주소 |
 | `SERVER_INTERNAL_BASE_URL` | 에이전트 | 서버 도구 API 내부 주소 |
 | `INTERNAL_SERVICE_TOKEN` | 서버, 에이전트 | 내부 서비스 요청 인증값 |
-| `LLM_PROVIDER` | 에이전트 | 사용할 LLM 제공자 |
-| `LLM_MODEL` | 에이전트 | 해당 제공자의 모델 ID |
-| `LLM_API_KEY` | 에이전트 | 제공자 API 키 |
+| `LLM_MODEL` | 에이전트 | 사용할 OpenAI 모델 ID. 구현 시 확정 |
+| `OPENAI_API_KEY` | 에이전트 | OpenAI API 키. 실제 값은 샘플 파일이나 저장소에 넣지 않음 |
 | `LLM_TIMEOUT_SECONDS` | 에이전트 | 모델 호출 시간 제한 |
 | `AGENT_MAX_TOOL_CALLS` | 에이전트 | 요청당 도구 호출 상한 |
 
@@ -316,6 +315,8 @@ account_book/
 ├── compose.yaml
 ├── .env.example
 ├── .gitignore
+├── scripts/
+│   └── validate_docs.py
 ├── ui/
 │   ├── Dockerfile
 │   ├── nginx.conf
@@ -332,10 +333,12 @@ account_book/
 │   └── tests/
 └── docs/
     ├── agent-account-book-design.md
-    └── development-rules.md
+    ├── development-rules.md
+    ├── python-conventions.md
+    └── api-contract.md
 ```
 
-현재는 README와 `docs`의 문서만 작성되어 있다. 나머지는 구현 예정 구조다.
+현재는 README, `docs`의 문서, 문서 검증 스크립트가 작성되어 있다. 애플리케이션 서비스와 Compose 파일은 구현 예정 구조다.
 
 ## 구현 순서와 완료 기준
 
@@ -361,4 +364,4 @@ account_book/
 
 ## 구현 전에 확정할 항목
 
-LLM 제공자와 모델, 단일 사용자 또는 로그인 포함 여부, 구체적인 패키지 버전을 확정해야 한다. 참고 저장소의 단일 실습 컨테이너와 에이전트 모듈을 바탕으로 가계부의 UI·서버·에이전트 분리 구조에 맞게 적용한다. 현재 문서는 이 가계부의 기능과 책임 경계를 정의하며, 참고 저장소의 구현을 그대로 복제하는 것은 아니다.
+사용할 OpenAI 모델 ID와 구체적인 패키지 버전을 확정해야 한다. 참고 저장소의 단일 실습 컨테이너와 에이전트 모듈을 바탕으로 가계부의 UI·서버·에이전트 분리 구조에 맞게 적용한다. 현재 문서는 이 가계부의 기능과 책임 경계를 정의하며, 참고 저장소의 구현을 그대로 복제하는 것은 아니다.
