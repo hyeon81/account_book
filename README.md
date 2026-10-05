@@ -24,7 +24,8 @@ account_book/
 ├── .devcontainer/
 │   └── devcontainer.json
 ├── scripts/
-│   └── validate_docs.py
+│   ├── validate_docs.py
+│   └── run_mock_ui.sh
 ├── tests/
 │   └── scripts/test_validate_docs.py
 ├── docs/
@@ -36,7 +37,8 @@ account_book/
     ├── ui-design.md
     ├── dashboard.md
     ├── transactions.md
-    └── assistant.md
+    ├── assistant.md
+    └── mock-ui-development.md
 ```
 
 ## 설계 문서
@@ -72,6 +74,8 @@ docker compose run --rm scripts python scripts/validate_docs.py
 검증 컨테이너에는 README, 문서, 스크립트와 테스트만 읽기 전용으로 연결합니다. 실제 `.env` 파일과 API 키는 이미지와 컨테이너에 넣지 않습니다. 로컬 Python 환경에서 테스트하려면 승인된 개발 의존성을 `python -m pip install -r requirements-dev.txt`로 설치한 뒤 `pytest`를 실행합니다.
 
 GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사용합니다. 개발 이미지에는 Python, `pytest`, Git, SSH 클라이언트가 들어 있으며, 작업 공간을 일반 사용자 `vscode`로 엽니다. 컨테이너 생성 후 Git 실행, 테스트, 문서 검증을 확인합니다. GitHub 인증은 Codespaces가 제공하는 방법을 사용하고 키를 이미지에 복사하지 않습니다.
+
+서버 없는 목 UI 개발을 위해 개발 컨테이너에 Node.js 24와 npm을 추가하고 Vite용 `5173` 포트를 전달합니다. 실제 UI 프로젝트가 만들어진 뒤에는 `scripts/run_mock_ui.sh`로 Codespaces 접속 주소를 Vite에 설정해 실행합니다. 실행 명령과 목 데이터 경계는 [목 UI 개발 환경](ui_docs/mock-ui-development.md)에 정리했습니다. 현재는 UI 코드나 npm 패키지를 추가하지 않았습니다.
 
 ## 개발 및 실행 계획
 

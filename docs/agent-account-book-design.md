@@ -352,7 +352,8 @@ account_book/
     ├── ui-design.md
     ├── dashboard.md
     ├── transactions.md
-    └── assistant.md
+    ├── assistant.md
+    └── mock-ui-development.md
 ```
 
 현재는 README, `docs`와 `ui_docs`의 문서, 문서 검증 스크립트와 이를 실행하는 Compose 서비스가 작성되어 있다. 가계부 애플리케이션 서비스는 구현 예정 구조다.
