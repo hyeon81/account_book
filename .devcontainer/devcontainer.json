@@ -1,0 +1,22 @@
+{
+  "name": "Account Book",
+  "build": {
+    "dockerfile": "../Dockerfile.dev",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "24"
+    }
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "vscode",
+  "overrideCommand": true,
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "Mock UI (Vite)"
+    }
+  },
+  "postCreateCommand": "git --version && git rev-parse --is-inside-work-tree && node --version && npm --version && python -m pytest && python scripts/validate_docs.py"
+}
