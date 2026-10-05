@@ -1,6 +1,6 @@
 # 가계부 UI 공통 설계
 
-초기 로컬 단일 사용자 가계부의 UI 문서 시작점이다. 화면별 구조와 세부 동작은 아래 문서에 나누어 정의한다. 시스템 경계는 [전체 설계](../docs/agent-account-book-design.md), HTTP 요청·응답은 [API 계약](../docs/api-contract.md), 코드와 테스트 배치는 [개발 규칙](../docs/development-rules.md)을 따른다. 현재 `ui/`에는 서버 없는 목 UI가 있으며 실제 API 연결은 후속 작업이다.
+초기 로컬 단일 사용자 가계부의 UI 문서 시작점이다. 화면별 구조와 세부 동작은 아래 문서에 나누어 정의한다. 시스템 경계는 [전체 설계](../docs/agent-account-book-design.md), HTTP 요청·응답은 [API 계약](../docs/api-contract.md), 코드와 테스트 배치는 [개발 규칙](../docs/development-rules.md)을 따른다. 현재 `ui/`는 브라우저 저장소로 거래를 유지하는 서버 없는 UI이며 실제 API 연결은 후속 작업이다.
 
 | 페이지 | 사용자 목표 | 세부 문서 |
 | --- | --- | --- |
@@ -8,8 +8,8 @@
 | 거래 목록·입력 | 거래 조회·필터·직접 등록·수정·삭제 | [거래 목록·입력 UI](transactions.md) |
 | AI 도우미 | 자연어 질문과 거래 초안 검토·확정 | [AI 도우미 UI](assistant.md) |
 
-서버 없이 화면 상태를 먼저 구현할 때의 개발 컨테이너와 데이터 경계는 [목 UI 개발 환경](mock-ui-development.md)을 따른다.
-아래 `/api` 요청 동작은 실제 서버를 연결할 때의 계약이다. 현재 목 UI는 `ui/src/infrastructure`의 로컬 구현으로 거래·집계·대화 결과를 제공한다.
+서버 없이 실행할 때의 개발 컨테이너와 데이터 경계는 [UI 개발 환경](mock-ui-development.md)을 따른다.
+아래 `/api` 요청 동작은 실제 서버를 연결할 때의 계약이다. 현재 UI는 `ui/src/infrastructure`의 로컬 저장소와 각본형 도우미로 거래·집계·대화 결과를 제공한다.
 
 ## 공통 탐색과 레이아웃
 

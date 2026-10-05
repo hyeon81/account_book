@@ -3,15 +3,14 @@ import { ArrowRight, Check, Send, Sparkles, WandSparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryFor, dateLabel, won } from '@/domain/transaction'
-import type { TransactionInput } from '@/domain/transaction'
-import { mockAssistant } from '@/infrastructure/mockAssistant'
-import type { MockReply } from '@/infrastructure/mockAssistant'
-import type { PreviewState } from './AppShell'
+import type { Transaction, TransactionInput } from '@/domain/transaction'
+import { scriptedAssistant } from '@/infrastructure/scriptedAssistant'
+import type { MockReply } from '@/infrastructure/scriptedAssistant'
 
 type Message = { id: number; role: 'user' | 'assistant'; text: string; reply?: MockReply; confirmed?: boolean }
 type Props = {
   month: string
-  preview: PreviewState
+  transactions: Transaction[]
   onConfirmDraft: (draft: TransactionInput) => void
   onEditDraft: (draft: TransactionInput, onSaved: () => void) => void
   onTransactions: () => void
@@ -23,7 +22,7 @@ const examples = [
   { icon: '↗', title: '다른 달 조회', prompt: '지난달 지출 얼마야?' },
 ]
 
-export function AssistantPage({ month, preview, onConfirmDraft, onEditDraft, onTransactions }: Props) {
+export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft, onTransactions }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
   const [pendingQuestion, setPendingQuestion] = useState('')
@@ -42,9 +41,8 @@ export function AssistantPage({ month, preview, onConfirmDraft, onEditDraft, onT
     nextMessageId.current += 2
     setMessages((current) => [...current, { id: userId, role: 'user', text: message }])
     try {
-      if (preview === 'error') throw new Error('AI 도우미 목 응답을 불러오지 못했어요. 일반 화면으로 바꿔 주세요.')
       const fullMessage = pendingQuestion ? `${pendingQuestion} ${message}` : message
-      const reply = await mockAssistant.ask(fullMessage, month)
+      const reply = await scriptedAssistant.ask(fullMessage, month, transactions)
       setMessages((current) => [...current, { id: userId + 1, role: 'assistant', text: reply.reply, reply }])
       setPendingQuestion(reply.kind === 'clarification' ? fullMessage : '')
     } catch (cause) {
@@ -58,12 +56,12 @@ export function AssistantPage({ month, preview, onConfirmDraft, onEditDraft, onT
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
-    <div className="page-heading"><div><div className="eyebrow">YOUR SMART COMPANION</div><h1 id="assistant-title">AI 도우미</h1><p>말로 남기고, 내 소비를 더 쉽게 이해해 보세요.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>정해진 규칙으로 문장을 처리하는 체험 기능입니다. AI 연결은 이후에 추가됩니다.</p></div></div>
     <div className="assistant-layout">
       <div className="surface-card chat-panel">
-        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>목 응답 · 저장 전 확인 필요</small></div><span className="chat-online"><span /> 준비됨</span></div>
+        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>각본형 응답 · 저장 전 확인 필요</small></div><span className="chat-online"><span /> 준비됨</span></div>
         <div className="chat-messages" aria-live="polite">
-          {messages.length === 0 && <div className="chat-welcome"><span className="welcome-icon"><WandSparkles size={27} /></span><h2>무엇을 도와드릴까요?</h2><p>거래를 기록하거나 이번 달 지출을 물어보세요.<br />서버 없이 목 데이터로 응답합니다.</p>
+          {messages.length === 0 && <div className="chat-welcome"><span className="welcome-icon"><WandSparkles size={27} /></span><h2>무엇을 도와드릴까요?</h2><p>거래를 기록하거나 이번 달 지출을 물어보세요.<br />정해진 문장 패턴만 처리합니다.</p>
             <div className="suggestions">{examples.map((example) => <button key={example.prompt} onClick={() => void send(example.prompt)}><span>{example.icon}</span><small>{example.title}</small><strong>{example.prompt}</strong><ArrowRight size={15} /></button>)}</div>
           </div>}
           {messages.map((message) => { const reply = message.reply; return <div key={message.id} className={`message ${message.role}`}>
@@ -89,12 +87,12 @@ export function AssistantPage({ month, preview, onConfirmDraft, onEditDraft, onT
             <Textarea id="chat-input" placeholder="예: 오늘 점심에 12,000원 썼어" rows={2} value={text} onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send() } }} />
             <Button type="submit" disabled={!text.trim() || loading} aria-label="메시지 보내기"><Send size={17} /></Button></form>
-          <small>목 데이터 기반 응답이에요. 실제 AI나 서버와 연결되지 않습니다.</small>
+          <small>저장된 거래를 기준으로 각본형 응답을 만듭니다. 실제 AI나 서버와 연결되지 않습니다.</small>
         </div>
       </div>
       <aside className="assistant-side"><div className="assistant-side-card"><span className="side-sparkle">✦</span><div className="eyebrow">HOW IT WORKS</div><h2>가볍게 물어보세요</h2><p>자연스러운 문장으로 거래를 기록하거나 내역을 확인할 수 있어요.</p>
         <div className="side-steps"><div><span>01</span><strong>말로 입력</strong><small>평소처럼 문장을 적어요</small></div><div><span>02</span><strong>초안 확인</strong><small>저장 전 내용을 살펴봐요</small></div><div><span>03</span><strong>직접 확정</strong><small>확인한 뒤에만 기록돼요</small></div></div></div>
-        <div className="assistant-note"><strong>안심하고 사용하세요</strong><p>이 화면은 목 UI입니다. 모든 거래는 브라우저 메모리에만 있고 새로고침하면 초기화돼요.</p></div></aside>
+        <div className="assistant-note"><strong>로컬에서만 처리해요</strong><p>거래는 이 브라우저에 저장됩니다. AI 서비스나 외부 서버로 보내지 않습니다.</p></div></aside>
     </div>
   </section>
 }

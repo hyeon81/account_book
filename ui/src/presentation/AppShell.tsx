@@ -1,51 +1,57 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDownUp, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { monthOf, seoulToday } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
-import { mockLedger } from '@/infrastructure/mockLedger'
+import { ledgerStorageKey, localLedger } from '@/infrastructure/localLedger'
 import { DashboardPage } from './DashboardPage'
 import { TransactionsPage } from './TransactionsPage'
 import { AssistantPage } from './AssistantPage'
 import { TransactionForm } from './TransactionForm'
 
 type Page = 'dashboard' | 'transactions' | 'assistant'
-export type PreviewState = 'normal' | 'loading' | 'error'
 type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void }
+
+function initialLedger(): { items: Transaction[]; error: string } {
+  try { return { items: localLedger.load(), error: '' } }
+  catch (cause) { return { items: [], error: cause instanceof Error ? cause.message : '거래를 불러오지 못했습니다.' } }
+}
 
 const navigation = [
   { id: 'dashboard', label: '대시보드', icon: LayoutDashboard },
   { id: 'transactions', label: '거래 내역', icon: ArrowDownUp },
-  { id: 'assistant', label: 'AI 도우미', icon: Sparkles },
+  { id: 'assistant', label: '입력 도우미', icon: Sparkles },
 ] as const
 
 export function AppShell() {
   const [page, setPage] = useState<Page>('dashboard')
   const [month, setMonth] = useState(() => monthOf(seoulToday()))
-  const [revision, setRevision] = useState(0)
-  const [preview, setPreview] = useState<PreviewState>('normal')
+  const [ledger, setLedger] = useState(initialLedger)
   const [form, setForm] = useState<FormState | null>(null)
   const [notice, setNotice] = useState('')
 
-  const refresh = () => setRevision((value) => value + 1)
+  const reload = () => setLedger(initialLedger())
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => { if (event.key === ledgerStorageKey) reload() }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
   const save = (input: TransactionInput) => {
-    if (form?.mode === 'edit' && form.id) mockLedger.update(form.id, input)
-    else mockLedger.add(input)
-    refresh()
+    const items = form?.mode === 'edit' && form.id ? localLedger.update(form.id, input) : localLedger.add(input)
+    setLedger({ items, error: '' })
     form?.afterSave?.()
     setForm(null)
-    setNotice(form?.mode === 'edit' ? '거래를 수정했어요.' : '거래를 저장했어요. 목 데이터는 새로고침하면 초기화됩니다.')
+    setNotice(form?.mode === 'edit' ? '거래를 수정했어요.' : '거래를 저장했어요.')
   }
   const edit = (transaction: Transaction) => {
     const { id, ...initial } = transaction
     setForm({ mode: 'edit', initial, id })
   }
   const confirmDraft = (draft: TransactionInput) => {
-    mockLedger.add(draft)
-    refresh()
-    setNotice('초안이 거래로 저장됐어요. 목 데이터는 새로고침하면 초기화됩니다.')
+    setLedger({ items: localLedger.add(draft), error: '' })
+    setNotice('초안이 거래로 저장됐어요.')
   }
+  const remove = (id: string) => setLedger({ items: localLedger.remove(id), error: '' })
 
   return (
     <div className="app-shell">
@@ -60,41 +66,30 @@ export function AppShell() {
             <button key={id} className={`nav-item ${page === id ? 'active' : ''}`}
               aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}>
               <Icon size={19} strokeWidth={1.9} /><span>{label}</span>
-              {id === 'assistant' && <span className="nav-new">NEW</span>}
             </button>
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="preview-control">
-            <label htmlFor="preview-state">목 상태 미리보기</label>
-            <Select value={preview} onValueChange={(value) => setPreview(value as PreviewState)}>
-              <SelectTrigger id="preview-state" className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">일반 화면</SelectItem>
-                <SelectItem value="loading">로딩 화면</SelectItem>
-                <SelectItem value="error">오류 화면</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div className="sidebar-tip"><Sparkles size={17} /><span>기록이 쌓이면<br />패턴이 보여요.</span></div>
-          <div className="sidebar-profile"><span className="avatar">나</span><span><strong>나의 가계부</strong><small>로컬 · 목 데이터</small></span><span className="profile-dot" /></div>
+          <div className="sidebar-profile"><span className="avatar">나</span><span><strong>나의 가계부</strong><small>이 브라우저에 저장</small></span><span className="profile-dot" /></div>
         </div>
       </aside>
 
       <div className="app-main">
         <header className="topbar">
           <div className="breadcrumb"><span>내 공간</span><span className="crumb-separator">/</span><strong>{navigation.find((item) => item.id === page)?.label}</strong></div>
-          <div className="top-actions"><span className="mock-pill"><span /> 목 데이터 사용 중</span>
+          <div className="top-actions"><span className="mock-pill"><span /> 브라우저에 저장 중</span>
             <Button className="top-add" onClick={() => setForm({ mode: 'create' })}><Plus size={16} /> 거래 추가</Button>
           </div>
         </header>
         <main className="page-content" id="main-content">
           {notice && <div className="notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="알림 닫기">×</button></div>}
-          <div hidden={page !== 'dashboard'}><DashboardPage month={month} onMonthChange={setMonth} revision={revision} preview={preview}
+          {ledger.error && <div className="notice" role="alert">{ledger.error} <button onClick={reload}>다시 불러오기</button></div>}
+          <div hidden={page !== 'dashboard'}><DashboardPage month={month} onMonthChange={setMonth} transactions={ledger.items}
             onAdd={() => setForm({ mode: 'create' })} onTransactions={() => setPage('transactions')} /></div>
-          <div hidden={page !== 'transactions'}><TransactionsPage month={month} onMonthChange={setMonth} revision={revision} preview={preview}
-            onAdd={() => setForm({ mode: 'create' })} onEdit={edit} onChanged={refresh} /></div>
-          <div hidden={page !== 'assistant'}><AssistantPage month={month} preview={preview}
+          <div hidden={page !== 'transactions'}><TransactionsPage month={month} onMonthChange={setMonth} transactions={ledger.items}
+            onAdd={() => setForm({ mode: 'create' })} onEdit={edit} onDelete={remove} /></div>
+          <div hidden={page !== 'assistant'}><AssistantPage month={month} transactions={ledger.items}
             onConfirmDraft={confirmDraft} onEditDraft={(draft, afterSave) => setForm({ mode: 'draft', initial: draft, afterSave })}
             onTransactions={() => setPage('transactions')} /></div>
         </main>
