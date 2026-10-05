@@ -4,9 +4,9 @@
 
 ## 설계의 전제
 
-- 서버와 에이전트는 별도 서비스로 구성하고 Docker Compose로 함께 실행한다.
+- UI 서버, API 서버, 에이전트, DB는 별도 서비스로 구성하고 Docker Compose로 함께 실행한다.
 - 초기 샘플은 로컬 실행, 한국어, 원화, Asia/Seoul 시간대를 기준으로 한다.
-- 데이터베이스는 PostgreSQL을 사용하는 안을 제안한다. 언어, 웹 프레임워크, LLM 제공자와 모델은 아직 확정하지 않는다.
+- 기술 스택은 아래 표를 기준으로 한다. LLM 제공자와 모델, 로그인 방식은 아직 확정하지 않는다.
 - 아래 경로, API, 환경변수 이름은 구현을 위한 제안이며 현재 존재하는 기능이 아니다.
 - 참고 대상으로 지정된 [week06-agent-lab 저장소](https://github.com/2026-ai-service-engineering-a/week06-agent-lab)는 2026년 10월 5일에 접근하여 `main`의 커밋 `3311fd14e3fe6a20d2aa5b0cce975ea89b3c5e10` 기준으로 파일 목록, README, Compose, 의존성, 모델 설정 코드를 확인했다. 실제 `.env` 및 `.env.sample` 파일은 읽지 않았다.
 
@@ -18,12 +18,48 @@
 
 | 항목 | 참고 저장소에서 확인한 구성 | 가계부 설계안 |
 | --- | --- | --- |
-| 실행 방식 | 단일 `lab` 컨테이너에서 CLI 실행 | `server`, `agent`, `db` 서비스 분리 |
+| 실행 방식 | 단일 `lab` 컨테이너에서 CLI 실행 | `ui`, `server`, `agent`, `db` 서비스 분리 |
 | 환경 설정 | README에서 `.env.sample` 복사 안내, Compose의 `env_file: .env` | `.env.example` 제공, 서비스별 필요한 값만 전달 |
 | 에이전트 모듈 | `config.py`, `tools.py`, `react.py`, `reflexion.py`, `harness.py`, `main.py` | 모델 설정, 가계부 도구, 호출 루프, 실행 제한을 분리하는 구조를 참고 |
 | 테스트 | README에서 LLM mock을 사용하는 키와 네트워크 없는 테스트 안내 | 모델 mock 테스트와 거래 저장 및 중복 방지 통합 테스트 |
 
-가계부에는 참고 저장소의 환경 설정과 에이전트 모듈 분리 방식을 적용할 수 있다. 다만 단일 실습 컨테이너 구성은 사용자가 요청한 서버·에이전트 분리 구조로 확장한다. LiteLLM 등 의존성의 실제 도입은 구현 시 확정한다. 아래의 공통 `LLM_API_KEY` 변수도 제안에 해당하며, 참고 저장소처럼 제공자별 키를 사용할지는 그때 결정한다.
+가계부에는 참고 저장소의 환경 설정과 에이전트 모듈 분리 방식을 적용한다. 단일 실습 컨테이너 구성은 사용자가 요청한 UI·서버·에이전트 분리 구조로 확장한다. LiteLLM Python SDK를 에이전트에 사용한다. 아래의 공통 `LLM_API_KEY` 변수는 제안이며, 참고 저장소처럼 제공자별 키를 사용할지는 구현 시 결정한다.
+
+## 시스템 구성
+
+```mermaid
+flowchart LR
+    browser[사용자 브라우저]
+    subgraph compose[Docker Compose]
+        ui[ui: Nginx<br/>React 화면 제공 및 API 프록시]
+        server[server: FastAPI<br/>거래 검증·저장·집계]
+        agent[agent: FastAPI + LiteLLM<br/>자연어 처리·도구 호출]
+        db[(db: PostgreSQL<br/>거래·카테고리·초안)]
+    end
+    llm[외부 LLM 제공자]
+
+    browser -->|화면 및 /api 요청| ui
+    ui -->|/api 프록시| server
+    server -->|대화 처리 요청| agent
+    agent -->|인증된 내부 도구 요청| server
+    server -->|거래 조회·저장| db
+    agent -->|모델 호출| llm
+```
+
+브라우저에 공개하는 포트는 `ui` 하나다. 일반 거래 요청은 `ui → server → db`, 대화 요청은 `ui → server → agent`로 처리한다. 에이전트가 가계부 데이터를 조회하거나 등록 초안을 만들 때는 `server`의 인증된 내부 도구 API를 호출한다. 에이전트는 DB에 직접 연결하지 않는다. 실제 거래 확정은 사용자의 확인 요청을 받은 `server`가 수행한다.
+
+## 서비스별 기술 스택
+
+| 서비스 | 기술 스택 | 선택한 역할 |
+| --- | --- | --- |
+| `ui` | React, TypeScript, Vite로 화면 빌드; Nginx로 정적 파일 제공 및 `/api` 프록시 | 화면 개발과 배포용 웹 서버를 분리한다. 운영 컨테이너에는 Vite 개발 서버 대신 빌드 결과와 Nginx를 넣는다. |
+| `server` | Python, FastAPI, Pydantic, SQLAlchemy, Alembic | HTTP API와 입력 검증, 거래·초안 처리, 집계 및 DB 스키마 마이그레이션을 담당한다. |
+| `agent` | Python, FastAPI, LiteLLM Python SDK, Pydantic | 서버 간 HTTP 요청을 받고 자연어 추출·조회 도구 호출·응답 생성을 담당한다. ReAct 루프와 호출 한도는 이 서비스의 코드로 구현한다. |
+| `db` | PostgreSQL | 거래·카테고리·초안 데이터를 영속 저장한다. Compose 명명된 볼륨을 사용한다. |
+
+Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 같은 주소의 `/api` 요청을 API 서버로 전달하기 위해서다. Vite는 개발과 빌드에 사용하고, 배포용 UI 컨테이너에서는 Nginx가 화면과 프록시를 맡는다. 초기 로컬 개발에서는 Vite 개발 서버를 사용할 수 있지만, Compose로 실행하는 샘플의 UI 서비스는 Nginx를 기준으로 한다.
+
+서비스는 Docker Compose로 함께 실행한다. 구체적인 이미지 태그와 라이브러리 버전은 구현하면서 호환성을 검증한 뒤 고정한다. LLM 제공자와 모델은 환경변수로 선택하며 `agent`에서만 API 키를 사용한다. 이 선택은 [Vite의 React·TypeScript 템플릿](https://vite.dev/guide/), [Nginx의 정적 파일 제공과 프록시 문서](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/), [FastAPI의 컨테이너 배포 문서](https://fastapi.tiangolo.com/deployment/docker/), [SQLAlchemy ORM](https://docs.sqlalchemy.org/en/20/orm/quickstart.html), [Alembic](https://alembic.sqlalchemy.org/en/latest/), [LiteLLM Python SDK](https://docs.litellm.ai/docs/)를 기준으로 한 설계 결정이다.
 
 ## 사용자가 보는 가계부
 
@@ -43,17 +79,19 @@
 
 영수증 이미지 인식, 은행 또는 카드 연동, 자동 이체, 투자 추천, 반복 거래 자동 등록, 여러 에이전트의 협업은 후속 범위로 둔다. 초기에는 하나의 에이전트가 제한된 도구를 사용하는 구성이 충분하다.
 
-## 서버와 에이전트의 역할
+## UI 서버와 API 서버 및 에이전트의 역할
 
 | 구성 요소 | 책임 |
 | --- | --- |
-| 웹 화면 | 입력, 거래 목록, 통계, 대화, 저장 전 확인 화면을 제공한다. 샘플에서는 서버가 화면을 함께 제공하는 안으로 시작한다. |
-| 서버 | 입력 검증, 사용자 범위 제한, 거래 저장, 조회, 합계 계산, 등록 확인 처리를 담당한다. |
+| UI 서버 | React 화면을 Nginx로 제공하고 브라우저의 `/api` 요청을 API 서버로 프록시한다. |
+| API 서버 | 입력 검증, 사용자 범위 제한, 거래 저장, 조회, 합계 계산, 등록 확인 처리를 담당한다. 서비스 이름은 `server`로 유지한다. |
 | 에이전트 | 자연어 의도 파악, 거래 정보 추출, 조회 도구 선택, 결과 설명을 담당한다. |
 | 데이터베이스 | 거래와 카테고리, 등록 초안 및 처리 상태를 영속적으로 저장한다. |
 | LLM 제공자 | 에이전트가 요청한 자연어 해석과 응답 생성을 수행한다. |
 
-요청 경로는 `브라우저 → 서버 → 에이전트 → 서버의 내부 도구 API → 데이터베이스`다. 에이전트는 필요한 경우 외부 LLM을 호출한다. 사용자의 확인 요청은 `브라우저 → 서버 → 데이터베이스`로 처리한다. 이 구조에서 서버는 에이전트의 결과도 다시 검증한다.
+화면은 `브라우저 → UI 서버`에서 제공한다. 대화 요청 경로는 `브라우저 → UI 서버의 /api 프록시 → API 서버 → 에이전트 → API 서버의 내부 도구 API → 데이터베이스`다. 에이전트는 필요한 경우 외부 LLM을 호출한다. 사용자의 확인 요청은 `브라우저 → UI 서버의 /api 프록시 → API 서버 → 데이터베이스`로 처리한다. API 서버는 에이전트의 결과도 다시 검증한다.
+
+UI 서버는 `/api` 경로만 프록시하며 `/internal` 경로는 외부로 전달하지 않는다. 브라우저는 동일 출처의 상대 경로 `/api/...`를 사용한다. Compose 서비스 이름은 컨테이너 내부 주소이므로 브라우저에서 `http://server:8000`을 직접 호출하지 않는다. UI 서버는 DB나 에이전트에 직접 접근하지 않는다.
 
 에이전트에 데이터베이스 접속 정보를 주거나 임의 SQL 실행 도구를 제공하지 않는다. 금액 합산, 기간 필터링, 사용자 권한은 서버의 정해진 로직으로 처리한다. 사용자 식별 정보는 서버가 전달하는 검증된 실행 문맥에서 가져오며 모델이 선택하지 않는다.
 
@@ -94,6 +132,131 @@ LLM 호출이 실패해도 직접 입력과 일반 통계 조회는 사용할 �
 
 사용자용 API는 `POST /api/chat`, `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/{id}`, `GET /api/summary`, `POST /api/drafts/{id}/confirm`을 제안한다. 내부 도구 API는 `/internal/tools/...` 아래에 별도로 둔다. 사용자용 경로와 내부 도구 경로는 서로 다른 인증을 적용한다.
 
+## 입력과 출력 예시
+
+아래 JSON은 화면과 API 서버가 주고받을 **예상 형식**이다. 엔드포인트와 필드 이름은 구현할 때 확정한다. 브라우저는 UI 서버의 같은 주소에서 `/api/...`를 호출한다. 예시의 날짜와 금액은 설명을 위한 값이다.
+
+### 화면에서 직접 거래 등록
+
+사용자가 거래 입력 화면에서 날짜 `2026-10-05`, 지출 `12000원`, 카테고리 `식비`, 사용처 `점심`을 입력한다. UI는 다음 내용을 보낸다.
+
+`POST /api/transactions`
+
+```json
+{
+  "transaction_date": "2026-10-05",
+  "type": "expense",
+  "amount": 12000,
+  "currency": "KRW",
+  "category_id": "food",
+  "merchant": "점심",
+  "memo": ""
+}
+```
+
+API 서버가 검증하고 저장한 뒤 다음처럼 응답한다. `amount`는 양의 정수이고 `type`으로 수입과 지출을 구분한다.
+
+```json
+{
+  "id": "tx_001",
+  "transaction_date": "2026-10-05",
+  "type": "expense",
+  "amount": 12000,
+  "currency": "KRW",
+  "category_id": "food",
+  "merchant": "점심",
+  "memo": "",
+  "source": "manual"
+}
+```
+
+대시보드는 선택한 월을 `GET /api/summary?month=2026-10`으로 조회한다. 서버가 저장된 거래를 합산해 다음처럼 반환한다. 이 값은 설명용이며 위의 거래 한 건만으로 계산한 결과는 아니다.
+
+```json
+{
+  "month": "2026-10",
+  "income_total": 2500000,
+  "expense_total": 850000,
+  "difference": 1650000,
+  "currency": "KRW",
+  "expenses_by_category": [
+    { "category_id": "food", "amount": 85000 }
+  ]
+}
+```
+
+### 대화로 거래 초안 만들고 확인
+
+사용자가 대화창에 “오늘 점심에 12,000원 썼어”라고 입력하면 UI가 다음 내용을 보낸다.
+
+`POST /api/chat`
+
+```json
+{
+  "message": "오늘 점심에 12,000원 썼어"
+}
+```
+
+서버는 요청을 받은 시각과 사용자 문맥을 에이전트에 전달한다. 에이전트의 추출 결과를 서버가 검증한 뒤, **거래로 확정되지 않은 초안**을 반환한다.
+
+```json
+{
+  "kind": "transaction_draft",
+  "reply": "식비 12,000원 지출로 기록할까요?",
+  "draft": {
+    "id": "draft_001",
+    "status": "pending",
+    "transaction_date": "2026-10-05",
+    "type": "expense",
+    "amount": 12000,
+    "currency": "KRW",
+    "category_id": "food",
+    "merchant": "점심",
+    "memo": ""
+  }
+}
+```
+
+UI는 초안을 보여주고 사용자가 확인하거나 수정하게 한다. 확인하면 `POST /api/drafts/draft_001/confirm`을 호출한다. 수정 사항이 있으면 요청 본문의 `changes`에 넣고, 없으면 빈 객체를 보낸다. 중복 요청을 구분하는 `Idempotency-Key` 헤더도 함께 보낸다. 서버는 변경값을 다시 검증한 뒤 확정한다. 수정이 없는 요청 본문은 다음과 같다.
+
+```json
+{
+  "changes": {}
+}
+```
+
+사용자가 카테고리를 바꿨다면 `changes`에 `{ "category_id": "other" }`처럼 변경한 필드만 넣는다. 성공 응답은 다음과 같다.
+
+```json
+{
+  "draft_id": "draft_001",
+  "status": "confirmed",
+  "transaction_id": "tx_002"
+}
+```
+
+확인 전 초안은 거래 목록과 합계에 포함되지 않는다. 같은 초안을 다시 확정해도 새 거래를 만들지 않고 기존 `transaction_id`를 반환하도록 설계한다. 금액이나 날짜가 불명확하면 초안 대신 `kind: "clarification"`과 추가 질문을 반환한다.
+
+### 대화로 합계 조회
+
+사용자가 “이번 달 식비 얼마야?”라고 입력하면 같은 `POST /api/chat` 경로로 문장을 보낸다. 에이전트가 `get_summary` 도구를 선택하고 API 서버가 집계한 결과를 받아 다음처럼 응답한다. 이 예시에서 “이번 달”은 서버가 전달한 Asia/Seoul 기준 시각의 2026년 10월이다.
+
+```json
+{
+  "kind": "answer",
+  "reply": "2026년 10월 식비 지출은 85,000원입니다.",
+  "summary": {
+    "period_start": "2026-10-01",
+    "period_end": "2026-10-31",
+    "category_id": "food",
+    "expense_total": 85000,
+    "currency": "KRW"
+  }
+}
+```
+
+`reply`의 금액은 모델이 새로 계산하지 않고 서버가 반환한 `expense_total`을 사용한다. 데이터가 없으면 합계 `0`과 적용된 기간을 반환한다. 입력 검증이나 저장이 실패하면 UI가 성공으로 표시하지 않도록 오류 응답을 별도로 정의한다.
+
 ## 데이터 모델 제안
 
 | 데이터 | 주요 항목 |
@@ -110,11 +273,14 @@ LLM 호출이 실패해도 직접 입력과 일반 통계 조회는 사용할 �
 
 | 서비스 | 연결 | 설정과 저장 |
 | --- | --- | --- |
-| `server` | 브라우저에 공개하는 유일한 서비스 | DB 연결, 에이전트 주소, 내부 인증 설정 |
+| `ui` | 브라우저에 공개하는 유일한 서비스 | 화면 제공, `/api` 요청을 API 서버로 프록시 |
+| `server` | Compose 내부에서 UI 서버 및 에이전트와 통신 | DB 연결, 에이전트 주소, 내부 인증 설정 |
 | `agent` | Compose 내부에서 서버와 통신 | LLM 연결 설정과 서버 내부 도구 주소 |
 | `db` | Compose 내부에서 서버와 통신 | PostgreSQL 및 명명된 볼륨 |
 
-컨테이너 내부에서는 `http://agent:8001`, `http://server:8000`, `db:5432`처럼 서비스 이름으로 연결한다. 이는 제안 포트이며 구현 시 확정한다. 초기 로컬 샘플의 서버 공개 포트는 `127.0.0.1`에 바인딩한다. 에이전트와 DB 포트는 호스트에 공개하지 않는다.
+Compose 서비스는 총 네 개다. 컨테이너 내부에서는 `http://agent:8001`, `http://server:8000`, `db:5432`처럼 서비스 이름으로 연결한다. 이는 제안 포트이며 구현 시 확정한다. 초기 로컬 샘플에서는 UI 서버만 `127.0.0.1:3000`에 공개한다. API 서버, 에이전트, DB 포트는 호스트에 공개하지 않는다.
+
+Nginx는 컨테이너 내부에서 모든 인터페이스에 바인딩해 호스트의 포트 전달을 받는다. React 화면은 Vite로 빌드해 Nginx가 제공한다. API 연결이 끊겼을 때 화면에는 오류와 재시도 안내를 표시한다.
 
 DB healthcheck와 서버의 연결 재시도를 구성한다. 스키마 마이그레이션 완료 후 서버를 준비 상태로 만들고 에이전트도 준비 상태 확인 경로를 제공한다. 데이터는 DB 볼륨에 남으므로 일반 재시작 뒤 유지되어야 한다. 볼륨을 삭제하는 명령은 데이터 삭제 작업으로 별도 안내한다.
 
@@ -124,7 +290,8 @@ DB healthcheck와 서버의 연결 재시도를 구성한다. 스키마 마이�
 
 | 변수 제안 | 소비 서비스 | 의미 |
 | --- | --- | --- |
-| `SERVER_PORT` | Compose | 호스트에서 사용할 서버 포트 |
+| `UI_PORT` | Compose | 호스트에서 사용할 UI 서버 포트. 제안값 `3000` |
+| `API_PROXY_TARGET` | UI 서버 | API 프록시 대상. 제안값 `http://server:8000`, 브라우저 번들에 전달하지 않음 |
 | `APP_TIMEZONE` | 서버, 에이전트 | 기본값 `Asia/Seoul` |
 | `POSTGRES_DB` | DB, 서버 연결 설정 | 데이터베이스 이름 |
 | `POSTGRES_USER` | DB, 서버 연결 설정 | 데이터베이스 사용자 |
@@ -149,23 +316,30 @@ account_book/
 ├── compose.yaml
 ├── .env.example
 ├── .gitignore
+├── ui/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── src/
+│   └── tests/
 ├── server/
 │   ├── Dockerfile
 │   ├── src/
+│   ├── migrations/
 │   └── tests/
 ├── agent/
 │   ├── Dockerfile
 │   ├── src/
 │   └── tests/
 └── docs/
-    └── agent-account-book-design.md
+    ├── agent-account-book-design.md
+    └── development-rules.md
 ```
 
-현재는 README와 이 설계 문서만 작성되어 있다. 나머지는 구현 예정 구조다.
+현재는 README와 `docs`의 문서만 작성되어 있다. 나머지는 구현 예정 구조다.
 
 ## 구현 순서와 완료 기준
 
-1. 서버, DB, Compose와 샘플 환경변수를 구성하고 직접 입력 및 거래 조회를 만든다.
+1. UI 서버, API 서버, DB, Compose와 샘플 환경변수를 구성하고 화면에서 직접 입력 및 거래 조회를 만든다.
 2. 서버에서 월별 집계와 카테고리별 합계를 계산하고 화면에 연결한다.
 3. 에이전트 서비스를 연결해 자연어 등록 초안과 사용자 확인을 구현한다.
 4. 읽기 도구를 연결해 자연어 통계 질문에 답하도록 한다.
@@ -173,6 +347,8 @@ account_book/
 
 샘플 완료 여부는 다음 시나리오로 확인한다.
 
+- UI 서버 주소에서 화면이 열리고 `/api` 프록시를 통해 거래 조회와 등록이 동작한다.
+- 호스트에는 UI 포트만 공개되고 UI 서버를 통한 `/internal` 경로 접근은 차단된다.
 - 직접 등록한 거래가 조회되고 재시작 후에도 유지된다.
 - 자연어 입력으로 생성된 초안은 확인 전에는 거래 합계에 포함되지 않는다.
 - 동일한 초안 확정 요청을 두 번 보내도 거래가 하나만 생긴다.
@@ -185,4 +361,4 @@ account_book/
 
 ## 구현 전에 확정할 항목
 
-서버 및 에이전트 언어와 프레임워크, LLM 제공자 및 SDK, 화면 기술, 단일 사용자 또는 로그인 포함 여부를 확정해야 한다. 참고 저장소의 단일 실습 컨테이너와 에이전트 모듈을 바탕으로 가계부의 서버·에이전트 분리 구조에 맞게 적용한다. 현재 문서는 이 가계부의 기능과 책임 경계를 정의하며, 참고 저장소의 구현을 그대로 복제하는 것은 아니다.
+LLM 제공자와 모델, 단일 사용자 또는 로그인 포함 여부, 구체적인 패키지 버전을 확정해야 한다. 참고 저장소의 단일 실습 컨테이너와 에이전트 모듈을 바탕으로 가계부의 UI·서버·에이전트 분리 구조에 맞게 적용한다. 현재 문서는 이 가계부의 기능과 책임 경계를 정의하며, 참고 저장소의 구현을 그대로 복제하는 것은 아니다.

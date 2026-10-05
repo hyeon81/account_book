@@ -12,16 +12,19 @@
 account_book/
 ├── README.md
 └── docs/
-    └── agent-account-book-design.md
+    ├── agent-account-book-design.md
+    └── development-rules.md
 ```
 
 ## 설계 문서
 
-[AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 사용 형태, 서버와 에이전트의 역할, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
+[AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 Mermaid 시스템 구성도, UI 서버·API 서버·에이전트·DB의 기술 스택, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
+
+[개발 규칙](docs/development-rules.md)에는 코드·테스트·설정 파일의 300줄 제한, 클래스별 파일 분리, Clean Architecture와 소스·테스트 폴더 규칙을 정리했습니다.
 
 ## 개발 및 실행 계획
 
-기술 스택, 의존성 설치 방법, 실행 명령은 구현이 진행되면 이 문서에 추가합니다.
+의존성 설치 방법과 실행 명령은 구현이 진행되면 이 문서에 추가합니다.
 현재 실행할 수 있는 애플리케이션은 없습니다.
 
 ## 문서 업데이트
