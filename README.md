@@ -4,6 +4,8 @@
 
 초기 구현은 로컬 단일 사용자용이며, AI 기능에는 OpenAI를 사용할 계획입니다.
 
+현재 저장소 버전은 [`0.1.0`](VERSION)입니다. 변경 사항은 [변경 이력](CHANGELOG.md), 릴리즈 절차는 [릴리즈 문서](docs/reales.md)를 참고하세요.
+
 ## 현재 상태
 
 프로젝트 초기 단계이며, 아직 가계부 애플리케이션 서버와 화면 코드는 없습니다. 현재 Docker Compose는 문서 검증 스크립트 실행에 사용합니다.
@@ -13,6 +15,8 @@
 ```text
 account_book/
 ├── README.md
+├── VERSION
+├── CHANGELOG.md
 ├── AGENTS.md
 ├── compose.yaml
 ├── Dockerfile.dev
