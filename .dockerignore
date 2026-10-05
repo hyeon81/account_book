@@ -1,0 +1,4 @@
+# The scripts image only needs its build definition and test dependency list.
+*
+!Dockerfile.dev
+!requirements-dev.txt

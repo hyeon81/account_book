@@ -1,0 +1,23 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.uv-cache/
+.coverage
+htmlcov/
+
+# Frontend and editor output
+node_modules/
+dist/
+coverage/
+.idea/
+.vscode/

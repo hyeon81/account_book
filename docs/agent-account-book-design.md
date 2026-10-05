@@ -73,6 +73,8 @@ Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 �
 
 등록 결과와 답변에는 실제 저장 여부, 적용 기간과 필터를 보여준다. 조회할 기록이 없으면 기록이 없다고 안내한다. 불완전한 입력을 임의의 거래로 저장하지 않는다.
 
+각 화면의 구성과 상태별 동작은 [UI 공통 설계](../ui_docs/ui-design.md)에서 연결한 페이지별 문서에 정리한다.
+
 ## 초기 기능 범위
 
 첫 구현은 수입과 지출의 직접 등록, 목록 조회, 수정과 삭제, 월별 합계, 카테고리별 합계, 자연어 등록 초안, 자연어 조회에 집중한다. 카테고리는 초기 기본 목록을 제공하고 분류가 애매하면 사용자가 선택한다.
@@ -278,7 +280,7 @@ UI는 초안을 보여주고 사용자가 확인하거나 수정하게 한다. �
 | `agent` | Compose 내부에서 서버와 통신 | LLM 연결 설정과 서버 내부 도구 주소 |
 | `db` | Compose 내부에서 서버와 통신 | PostgreSQL 및 명명된 볼륨 |
 
-Compose 서비스는 총 네 개다. 컨테이너 내부에서는 `http://agent:8001`, `http://server:8000`, `db:5432`처럼 서비스 이름으로 연결한다. 이는 제안 포트이며 구현 시 확정한다. 초기 로컬 샘플에서는 UI 서버만 `127.0.0.1:3000`에 공개한다. API 서버, 에이전트, DB 포트는 호스트에 공개하지 않는다.
+가계부 애플리케이션 서비스는 네 개로 계획한다. 현재 `compose.yaml`에는 문서 검증용 `scripts` 서비스만 있으며, 위 네 서비스는 아직 구현되지 않았다. 구현 후 컨테이너 내부에서는 `http://agent:8001`, `http://server:8000`, `db:5432`처럼 서비스 이름으로 연결한다. 이는 제안 포트이며 구현 시 확정한다. 초기 로컬 샘플에서는 UI 서버만 `127.0.0.1:3000`에 공개한다. API 서버, 에이전트, DB 포트는 호스트에 공개하지 않는다.
 
 Nginx는 컨테이너 내부에서 모든 인터페이스에 바인딩해 호스트의 포트 전달을 받는다. React 화면은 Vite로 빌드해 Nginx가 제공한다. API 연결이 끊겼을 때 화면에는 오류와 재시도 안내를 표시한다.
 
@@ -312,11 +314,21 @@ Compose의 `.env`는 변수 치환에 사용할 예정이며, 각 컨테이너�
 ```text
 account_book/
 ├── README.md
+├── AGENTS.md
 ├── compose.yaml
+├── Dockerfile.dev
+├── requirements-dev.txt
+├── pytest.ini
 ├── .env.example
 ├── .gitignore
+├── .gitattributes
+├── .dockerignore
+├── .devcontainer/
+│   └── devcontainer.json
 ├── scripts/
 │   └── validate_docs.py
+├── tests/
+│   └── scripts/test_validate_docs.py
 ├── ui/
 │   ├── Dockerfile
 │   ├── nginx.conf
@@ -331,14 +343,20 @@ account_book/
 │   ├── Dockerfile
 │   ├── src/
 │   └── tests/
-└── docs/
-    ├── agent-account-book-design.md
-    ├── development-rules.md
-    ├── python-conventions.md
-    └── api-contract.md
+├── docs/
+│   ├── agent-account-book-design.md
+│   ├── development-rules.md
+│   ├── python-conventions.md
+│   └── api-contract.md
+└── ui_docs/
+    ├── ui-design.md
+    ├── dashboard.md
+    ├── transactions.md
+    ├── assistant.md
+    └── mock-ui-development.md
 ```
 
-현재는 README, `docs`의 문서, 문서 검증 스크립트가 작성되어 있다. 애플리케이션 서비스와 Compose 파일은 구현 예정 구조다.
+현재는 README, `docs`와 `ui_docs`의 문서, 문서 검증 스크립트와 이를 실행하는 Compose 서비스가 작성되어 있다. 가계부 애플리케이션 서비스는 구현 예정 구조다.
 
 ## 구현 순서와 완료 기준
 
