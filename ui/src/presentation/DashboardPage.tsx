@@ -1,21 +1,19 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, CirclePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { summarize } from '@/application/ledger'
 import { monthLabel, shiftMonth, won } from '@/domain/transaction'
-import { mockLedger } from '@/infrastructure/mockLedger'
-import type { PreviewState } from './AppShell'
+import type { Transaction } from '@/domain/transaction'
 
 type Props = {
   month: string
   onMonthChange: (month: string) => void
-  revision: number
-  preview: PreviewState
+  transactions: Transaction[]
   onAdd: () => void
   onTransactions: () => void
 }
 
-export function DashboardPage({ month, onMonthChange, revision, preview, onAdd, onTransactions }: Props) {
-  void revision
-  const summary = mockLedger.summary(month)
+export function DashboardPage({ month, onMonthChange, transactions, onAdd, onTransactions }: Props) {
+  const summary = summarize(transactions, month)
   const biggest = summary.expensesByCategory[0]?.amount ?? 0
 
   return (
@@ -29,10 +27,7 @@ export function DashboardPage({ month, onMonthChange, revision, preview, onAdd, 
         </div>
       </div>
 
-      {preview === 'error' ? <div className="state-card" role="alert"><strong>요약을 불러오지 못했어요.</strong><p>목 오류 상태입니다. 일반 화면으로 바꿔 다시 확인해 주세요.</p></div> :
-        preview === 'loading' ? <div className="summary-grid" role="status" aria-label="요약을 불러오는 중">
-          {[1, 2, 3].map((item) => <div className="metric-card skeleton-card" key={item}><span className="skeleton-line short" /><span className="skeleton-line" /></div>)}
-        </div> : <>
+      <>
           <div className="summary-grid">
             <div className="metric-card"><div className="metric-header"><span>총 수입</span><span className="metric-icon income"><ArrowDownRight size={18} /></span></div>
               <strong>{won(summary.incomeTotal)}</strong><small>이번 달 들어온 금액</small></div>
@@ -63,7 +58,7 @@ export function DashboardPage({ month, onMonthChange, revision, preview, onAdd, 
             </aside>
           </div>
           <div className="dashboard-footer"><span>최근 기록을 자세히 살펴보고 싶나요?</span><button onClick={onTransactions}>거래 내역 보기 <ArrowRight size={16} /></button></div>
-        </>}
+        </>
     </section>
   )
 }

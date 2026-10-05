@@ -3,35 +3,32 @@ import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'luci
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { filterTransactions } from '@/application/ledger'
 import { categories, categoryFor, dateLabel, monthLabel, shiftMonth, won } from '@/domain/transaction'
 import type { Transaction, TransactionType } from '@/domain/transaction'
-import { mockLedger } from '@/infrastructure/mockLedger'
-import type { PreviewState } from './AppShell'
 
 type Props = {
   month: string
   onMonthChange: (month: string) => void
-  revision: number
-  preview: PreviewState
+  transactions: Transaction[]
   onAdd: () => void
   onEdit: (transaction: Transaction) => void
-  onChanged: () => void
+  onDelete: (id: string) => void
 }
 
-export function TransactionsPage({ month, onMonthChange, revision, preview, onAdd, onEdit, onChanged }: Props) {
-  void revision
+export function TransactionsPage({ month, onMonthChange, transactions, onAdd, onEdit, onDelete }: Props) {
   const [type, setType] = useState<TransactionType | 'all'>('all')
   const [categoryId, setCategoryId] = useState('all')
   const [visible, setVisible] = useState(5)
   const [target, setTarget] = useState<Transaction | null>(null)
   const [error, setError] = useState('')
-  const filtered = mockLedger.list({ month, type, categoryId })
+  const filtered = filterTransactions(transactions, { month, type, categoryId })
   const items = filtered.slice(0, visible)
   const setFilterType = (value: TransactionType | 'all') => { setType(value); setCategoryId('all'); setVisible(5) }
   const changeMonth = (value: string) => { onMonthChange(value); setVisible(5) }
   const remove = () => {
     if (!target) return
-    try { mockLedger.remove(target.id); onChanged(); setTarget(null); setError('') }
+    try { onDelete(target.id); setTarget(null); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : '삭제하지 못했어요.') }
   }
 
@@ -62,9 +59,7 @@ export function TransactionsPage({ month, onMonthChange, revision, preview, onAd
           </div>
         </div>
         <div className="transaction-list-heading"><strong>거래 목록</strong><span>{monthLabel(month)} · {filtered.length}건</span></div>
-        {preview === 'error' ? <div className="list-state" role="alert"><strong>거래 목록을 불러오지 못했어요.</strong><p>목 오류 상태입니다. 일반 화면으로 바꿔 다시 확인해 주세요.</p></div> :
-          preview === 'loading' ? <div className="list-state" role="status">거래를 불러오는 중이에요…</div> :
-          filtered.length === 0 ? <div className="list-state"><Search size={27} /><strong>조건에 맞는 거래가 없습니다.</strong><p>다른 월이나 필터를 선택해 보세요.</p>
+        {filtered.length === 0 ? <div className="list-state"><Search size={27} /><strong>조건에 맞는 거래가 없습니다.</strong><p>거래를 추가하거나 다른 월·필터를 선택해 보세요.</p>
             <Button variant="outline" onClick={() => { setFilterType('all'); setCategoryId('all') }}>필터 해제</Button></div> : <>
             <div className="transaction-table-head"><span>거래 내역</span><span>날짜</span><span>금액</span><span className="sr-only">행동</span></div>
             <div className="transaction-list">

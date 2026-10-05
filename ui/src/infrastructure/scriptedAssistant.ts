@@ -1,6 +1,6 @@
 import { categories, categoryFor, monthOf, seoulToday, shiftMonth, won } from '../domain/transaction.ts'
-import type { TransactionInput } from '../domain/transaction.ts'
-import { mockLedger } from './mockLedger.ts'
+import type { Transaction, TransactionInput } from '../domain/transaction.ts'
+import { summarize } from '../application/ledger.ts'
 
 export type MockReply =
   | { kind: 'answer'; reply: string; detail: string }
@@ -31,10 +31,10 @@ function amountFromMessage(message: string): number | null {
   return Number.isSafeInteger(amount) && amount > 0 ? amount : null
 }
 
-function answerFor(message: string, selectedMonth: string): MockReply {
+function answerFor(message: string, selectedMonth: string, transactions: Transaction[]): MockReply {
   const month = message.includes('지난달') ? shiftMonth(monthOf(seoulToday()), -1) :
     message.includes('이번 달') || message.includes('이번달') ? monthOf(seoulToday()) : selectedMonth
-  const summary = mockLedger.summary(month)
+  const summary = summarize(transactions, month)
   const category = categories.find((item) => item.type === 'expense' && message.includes(item.name))
   const amount = category
     ? summary.expensesByCategory.find((item) => item.category.id === category.id)?.amount ?? 0
@@ -45,16 +45,16 @@ function answerFor(message: string, selectedMonth: string): MockReply {
     reply: summary.transactionCount === 0
       ? `${month}에는 기록된 거래가 없어요.`
       : `${month} ${label}은 ${won(amount)}이에요.`,
-    detail: `${month} · ${category ? `${category.name} 카테고리` : '모든 지출'} · 목 데이터 기준`,
+    detail: `${month} · ${category ? `${category.name} 카테고리` : '모든 지출'} · 저장된 거래 기준`,
   }
 }
 
-export const mockAssistant = {
-  async ask(message: string, selectedMonth: string): Promise<MockReply> {
+export const scriptedAssistant = {
+  async ask(message: string, selectedMonth: string, transactions: Transaction[]): Promise<MockReply> {
     await new Promise((resolve) => setTimeout(resolve, 380))
-    if (message.includes('오류 테스트')) throw new Error('AI 도우미 목 응답을 불러오지 못했어요. 다시 시도해 주세요.')
+    if (message.includes('오류 테스트')) throw new Error('도우미 응답을 불러오지 못했어요. 다시 시도해 주세요.')
     if (/얼마|합계|내역|썼지|사용했/.test(message) && !/썼어|결제했어/.test(message)) {
-      return answerFor(message, selectedMonth)
+      return answerFor(message, selectedMonth, transactions)
     }
     const amount = amountFromMessage(message)
     if (!amount) return { kind: 'clarification', reply: '금액을 알려주시면 거래 초안을 만들게요. 예: 점심에 12,000원 썼어' }
