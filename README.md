@@ -37,6 +37,13 @@ account_book/
 ├── tests/
 │   └── scripts/test_validate_docs.py
 ├── docs/
+│   ├── ai/
+│   │   ├── README.md
+│   │   ├── requirements.md
+│   │   ├── agent-architecture.md
+│   │   ├── category-rag.md
+│   │   ├── chat-statistics.md
+│   │   └── rule-statistics.md
 │   ├── agent-account-book-design.md
 │   ├── development-rules.md
 │   ├── python-conventions.md
@@ -51,6 +58,8 @@ account_book/
 
 ## 설계 문서
 
+[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 실제 AI 연동은 후속 구현이며 현재 각본형 UI 도우미와 구분합니다.
+
 [AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 Mermaid 시스템 구성도, UI 서버·API 서버·에이전트·DB의 기술 스택, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
 
 [개발 규칙](docs/development-rules.md)에는 코드·테스트·설정 파일의 300줄 제한, 클래스별 파일 분리, Clean Architecture와 소스·테스트 폴더 규칙을 정리했습니다.
@@ -61,7 +70,7 @@ account_book/
 
 ## 문서 검증
 
-문서를 변경한 뒤 아래 명령으로 `docs`와 `ui_docs`의 로컬 링크와 제목 앵커, 코드 블록, JSON 예시, 설계와 API 계약의 경로 일치를 확인합니다. Python 표준 라이브러리만 사용하며 `.env` 파일이나 외부 URL은 읽지 않습니다.
+문서를 변경한 뒤 아래 명령으로 `docs`와 `ui_docs`의 하위 폴더까지 로컬 링크와 제목 앵커, 코드 블록, JSON 예시, 설계와 API 계약의 경로 일치를 확인합니다. Python 표준 라이브러리만 사용하며 `.env` 파일이나 외부 URL은 읽지 않습니다.
 
 ```bash
 python scripts/validate_docs.py
