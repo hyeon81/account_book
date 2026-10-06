@@ -132,7 +132,7 @@ def validate(root: Path) -> list[str]:
     root = root.resolve()
     pages = [root / "README.md"]
     for folder in ("docs", "ui_docs"):
-        pages.extend(sorted((root / folder).glob("*.md")))
+        pages.extend(sorted((root / folder).rglob("*.md")))
     headings_by_path: dict[Path, set[str]] = {}
     links_by_path: dict[Path, list[tuple[int, str]]] = {}
     errors: list[str] = []
