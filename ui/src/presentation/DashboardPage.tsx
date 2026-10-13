@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, CirclePlus } from 'lucide-react'
+import { AiFeatureTag } from './AiFeatureTag'
 import { Button } from '@/components/ui/button'
 import { summarize } from '@/application/ledger'
 import { monthLabel, shiftMonth, won } from '@/domain/transaction'
@@ -55,6 +56,11 @@ export function DashboardPage({ month, onMonthChange, transactions, onAdd, onTra
               <div className="eyebrow">A LITTLE INSIGHT</div><h2>작은 기록이<br />큰 차이를 만들어요.</h2>
               <p>오늘의 지출을 남기고 나만의 소비 흐름을 알아보세요.</p>
               <Button onClick={onAdd}>새 거래 기록하기 <ArrowRight size={16} /></Button>
+              <div className="ai-design-note"><strong>소비 패턴을 살펴보는 AI</strong>
+                <p>규칙 통계와 주간 비교의 설계 흐름을 확인하세요.</p>
+                <div className="ai-feature-links"><span>규칙 통계 <AiFeatureTag feature="rule-statistics" /></span>
+                  <span>주간 비교 <AiFeatureTag feature="plan-and-execute" /></span></div>
+              </div>
             </aside>
           </div>
           <div className="dashboard-footer"><span>최근 기록을 자세히 살펴보고 싶나요?</span><button onClick={onTransactions}>거래 내역 보기 <ArrowRight size={16} /></button></div>

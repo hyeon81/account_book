@@ -31,3 +31,9 @@ npm --prefix ui run lint
 ```
 
 도메인과 계산 코드는 `src/domain`, `src/application`에, 로컬 저장과 각본형 도우미는 `src/infrastructure`에, 화면은 `src/presentation`에 있습니다. 테스트는 `tests` 아래에 같은 경로로 둡니다. 향후 API·AI 호출은 인프라 경계에서 연결합니다.
+
+## AI 위키
+
+상단 오른쪽 AI 위키와 화면의 AI 태그에서 기능별 에이전트 설계를 확인합니다.
+현재 도우미는 각본형 미리보기이며 RAG·LLM·MCP는 아직 연결되지 않았습니다.
+주소 예시: `#ai-wiki/plan-and-execute`. [UI 문서](../ui_docs/ai-wiki.md)를 참고하세요.

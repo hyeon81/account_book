@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowDownUp, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
+import { ArrowDownUp, BookOpen, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { monthOf, seoulToday } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
@@ -8,8 +8,10 @@ import { DashboardPage } from './DashboardPage'
 import { TransactionsPage } from './TransactionsPage'
 import { AssistantPage } from './AssistantPage'
 import { TransactionForm } from './TransactionForm'
+import { AiWikiPage } from './AiWikiPage'
+import { pageFromHash, wikiSectionFromHash } from '@/application/wikiNavigation'
 
-type Page = 'dashboard' | 'transactions' | 'assistant'
+type Page = 'dashboard' | 'transactions' | 'assistant' | 'wiki'
 type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void }
 
 function initialLedger(): { items: Transaction[]; error: string } {
@@ -24,7 +26,21 @@ const navigation = [
 ] as const
 
 export function AppShell() {
-  const [page, setPage] = useState<Page>('dashboard')
+  const [page, setPage] = useState<Page>(() => pageFromHash(window.location.hash))
+  const [wikiSection, setWikiSection] = useState(() => wikiSectionFromHash(window.location.hash) ?? 'overview')
+  const navigate = (next: Page) => {
+    window.location.hash = next === 'wiki' ? 'ai-wiki/overview' : next
+    setPage(next)
+  }
+  useEffect(() => {
+    const syncHash = () => {
+      const section = wikiSectionFromHash(window.location.hash)
+      if (section) setWikiSection(section)
+      setPage(pageFromHash(window.location.hash))
+    }
+    window.addEventListener('hashchange', syncHash)
+    return () => window.removeEventListener('hashchange', syncHash)
+  }, [])
   const [month, setMonth] = useState(() => monthOf(seoulToday()))
   const [ledger, setLedger] = useState(initialLedger)
   const [form, setForm] = useState<FormState | null>(null)
@@ -56,7 +72,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="주 탐색">
-        <button className="brand" onClick={() => setPage('dashboard')} aria-label="모아 대시보드로 이동">
+        <button className="brand" onClick={() => navigate('dashboard')} aria-label="모아 대시보드로 이동">
           <span className="brand-mark"><Wallet size={21} strokeWidth={2.2} /></span>
           <span><strong>모아</strong><small>나의 가계부</small></span>
         </button>
@@ -64,8 +80,8 @@ export function AppShell() {
         <nav className="sidebar-nav" aria-label="페이지">
           {navigation.map(({ id, label, icon: Icon }) => (
             <button key={id} className={`nav-item ${page === id ? 'active' : ''}`}
-              aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}>
-              <Icon size={19} strokeWidth={1.9} /><span>{label}</span>
+              aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}>
+              <Icon size={19} strokeWidth={1.9} /><span>{label}</span>{id === 'assistant' && <span className="nav-ai-tag">AI</span>}
             </button>
           ))}
         </nav>
@@ -77,21 +93,25 @@ export function AppShell() {
 
       <div className="app-main">
         <header className="topbar">
-          <div className="breadcrumb"><span>내 공간</span><span className="crumb-separator">/</span><strong>{navigation.find((item) => item.id === page)?.label}</strong></div>
+          <div className="breadcrumb"><span>내 공간</span><span className="crumb-separator">/</span><strong>{page === 'wiki' ? 'AI 위키' : navigation.find((item) => item.id === page)?.label}</strong></div>
           <div className="top-actions"><span className="mock-pill"><span /> 브라우저에 저장 중</span>
             <Button className="top-add" onClick={() => setForm({ mode: 'create' })}><Plus size={16} /> 거래 추가</Button>
+            <a className="wiki-trigger" href="#ai-wiki/overview" aria-current={page === 'wiki' ? 'page' : undefined}><BookOpen size={16} aria-hidden="true" /> AI 위키</a>
           </div>
         </header>
         <main className="page-content" id="main-content">
           {notice && <div className="notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="알림 닫기">×</button></div>}
           {ledger.error && <div className="notice" role="alert">{ledger.error} <button onClick={reload}>다시 불러오기</button></div>}
           <div hidden={page !== 'dashboard'}><DashboardPage month={month} onMonthChange={setMonth} transactions={ledger.items}
-            onAdd={() => setForm({ mode: 'create' })} onTransactions={() => setPage('transactions')} /></div>
+            onAdd={() => setForm({ mode: 'create' })} onTransactions={() => navigate('transactions')} /></div>
           <div hidden={page !== 'transactions'}><TransactionsPage month={month} onMonthChange={setMonth} transactions={ledger.items}
             onAdd={() => setForm({ mode: 'create' })} onEdit={edit} onDelete={remove} /></div>
           <div hidden={page !== 'assistant'}><AssistantPage month={month} transactions={ledger.items}
             onConfirmDraft={confirmDraft} onEditDraft={(draft, afterSave) => setForm({ mode: 'draft', initial: draft, afterSave })}
-            onTransactions={() => setPage('transactions')} /></div>
+            onTransactions={() => navigate('transactions')} /></div>
+          {page === 'wiki' && <AiWikiPage section={wikiSection}
+            onSectionChange={(section) => { window.location.hash = `ai-wiki/${section}` }}
+            onAssistant={() => navigate('assistant')} />}
         </main>
       </div>
       <TransactionForm key={`${form?.mode}-${form?.id ?? 'new'}-${form ? 'open' : 'closed'}`}

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { ArrowRight, Check, Send, Sparkles, WandSparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { AiFeatureTag } from './AiFeatureTag'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryFor, dateLabel, won } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
@@ -56,7 +57,11 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
-    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>정해진 규칙으로 문장을 처리하는 체험 기능입니다. AI 연결은 이후에 추가됩니다.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><div className="feature-heading"><h1 id="assistant-title">입력 도우미</h1><AiFeatureTag feature="overview" preview /></div><p>정해진 규칙으로 문장을 처리하는 체험 기능입니다. AI 연결은 이후에 추가됩니다.</p></div></div>
+    <div className="ai-feature-links assistant-ai-links">
+      <span>카테고리 추천 <AiFeatureTag feature="category-rag" /></span>
+      <span>채팅 통계 <AiFeatureTag feature="chat-statistics" /></span>
+    </div>
     <div className="assistant-layout">
       <div className="surface-card chat-panel">
         <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>각본형 응답 · 저장 전 확인 필요</small></div><span className="chat-online"><span /> 준비됨</span></div>
