@@ -4,6 +4,8 @@
 
 ## 개발 컨테이너
 
+로컬 Docker 개발 서버의 실행·검증 명령은 [shadcn/ui와 개발용 Docker](shadcn-development.md)를 따른다. `docker-compose.dev.yml`은 5173 포트의 소스 변경 반영용이며, `compose.yaml`은 8080 포트의 빌드 미리보기용이다.
+
 GitHub Codespaces 또는 Dev Containers로 저장소를 열면 `.devcontainer/devcontainer.json`이 Python, Git, Node.js 24, npm을 사용할 수 있는 환경을 준비한다. Vite 개발 서버용 `5173` 포트를 전달한다. 컨테이너 생성 뒤에는 Git 명령, Python 테스트, 문서 검증, UI 의존성 설치, UI 테스트와 빌드를 실행한다. 개발 서버는 터미널에서 직접 시작한다.
 
 ## UI 실행
@@ -14,7 +16,7 @@ GitHub Codespaces 또는 Dev Containers로 저장소를 열면 `.devcontainer/de
 bash scripts/run_mock_ui.sh
 ```
 
-실행 스크립트는 `0.0.0.0`에 바인딩하고 고정 포트 `5173`을 사용한다. 포트가 이미 사용 중이면 다른 포트로 이동하지 않고 오류를 확인한다. Codespaces에서는 전달된 포트의 정확한 호스트 이름만 Vite에 추가로 허용한다. 로컬 개발 컨테이너에서는 기본 허용 호스트를 사용한다. 현재 `docker compose up`은 문서 검증만 실행하며 UI 서버를 시작하지 않는다.
+실행 스크립트는 `0.0.0.0`에 바인딩하고 고정 포트 `5173`을 사용한다. 포트가 이미 사용 중이면 다른 포트로 이동하지 않고 오류를 확인한다. Codespaces에서는 전달된 포트의 정확한 호스트 이름만 Vite에 추가로 허용한다. 로컬 개발 컨테이너에서는 기본 허용 호스트를 사용한다. `docker compose up`은 8080 포트에서 빌드한 UI를 제공한다.
 
 ## 데이터와 동작 경계
 

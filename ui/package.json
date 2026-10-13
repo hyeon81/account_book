@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint src tests vite.config.ts",
     "test": "node --experimental-strip-types --test tests/application/ledger.test.ts tests/application/report.test.ts tests/infrastructure/localLedger.test.ts tests/infrastructure/scriptedAssistant.test.ts tests/infrastructure/cardMessage.test.ts",
     "preview": "vite preview"
   },

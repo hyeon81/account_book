@@ -4,6 +4,8 @@
 
 ## 실행
 
+개발 중에는 저장소 루트에서 `docker compose -f docker-compose.dev.yml up -d --build`를 실행하고 `http://localhost:5173`에 접속합니다. 소스 변경이 즉시 반영됩니다. 컨테이너 테스트·빌드와 종료 방법은 [개발용 Docker 안내](../docs/ui_docs/shadcn-development.md)를 참고하세요.
+
 Docker Desktop을 켠 뒤 저장소 루트에서 `docker compose up --build`를 실행하고 `http://localhost:8080`에 접속합니다. 이후에는 `docker compose up`으로 실행할 수 있고, UI 소스를 변경했다면 `--build`로 다시 빌드합니다. 백그라운드 실행은 `docker compose up -d --build`, 종료는 `docker compose down`입니다. Docker에서는 빌드한 UI를 Vite 미리보기 서버로 제공합니다.
 
 저장소 루트의 GitHub Codespaces 또는 Dev Container는 Node.js 24, npm, 5173 포트 전달을 준비하고 `npm ci`, UI 테스트, 빌드를 실행합니다. 개발 서버는 컨테이너 터미널에서 다음과 같이 시작합니다.
