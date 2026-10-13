@@ -20,7 +20,7 @@ type Props = {
 }
 
 const examples = [
-  { icon: '✳', title: '거래 등록', prompt: '오늘 점심에 12,000원 썼어' },
+  { icon: '✳', title: '채팅 입력', prompt: '오늘 오후 3시에 카페에서 5천원 썼어' },
   { icon: '◈', title: '지출 확인', prompt: '이번 달 식비 얼마야?' },
   { icon: '↗', title: '다른 달 조회', prompt: '지난달 지출 얼마야?' },
 ]
@@ -47,7 +47,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
       const fullMessage = pendingQuestion ? `${pendingQuestion} ${message}` : message
       const reply = await scriptedAssistant.ask(fullMessage, month, transactions)
       setMessages((current) => [...current, { id: userId + 1, role: 'assistant', text: reply.reply, reply }])
-      setPendingQuestion(reply.kind === 'clarification' ? fullMessage : '')
+      setPendingQuestion(reply.kind === 'clarification' && reply.continueContext !== false ? fullMessage : '')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '응답을 불러오지 못했어요.')
       setText(message)
@@ -60,7 +60,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
     <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자를 붙여넣거나 문장으로 거래를 입력해 보세요. 저장 전 직접 수정할 수 있어요.</p></div>
-      <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 카드 문자 붙여넣기</Button></div>
+      <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 채팅으로 거래 채우기</Button></div>
     <div className="assistant-layout">
       <Card className="surface-card chat-panel">
         <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>각본형 응답 · 저장 전 확인 필요</small></div><Badge variant="secondary" className="chat-online"><span /> 준비됨</Badge></div>
@@ -73,13 +73,13 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
             <div className="message-content"><div className="message-bubble">{message.text}</div>
               {reply?.kind === 'answer' && <small className="reply-detail">{reply.detail}</small>}
               {reply?.kind === 'transaction_draft' && <div className="draft-card">
-                <div className="draft-heading"><span className={message.confirmed ? 'saved-label' : 'draft-label'}>{message.confirmed ? '저장 완료' : '저장 전 초안'}</span><strong>{categoryFor(reply.draft.categoryId)?.name} {reply.draft.type === 'income' ? '수입' : '지출'}</strong></div>
+                <div className="draft-heading"><span className={message.confirmed ? 'saved-label' : 'draft-label'}>{message.confirmed ? '저장 완료' : '저장 전 초안'}</span><strong>{categoryFor(reply.draft.categoryId)?.name ?? '분류 필요'} {reply.draft.type === 'income' ? '수입' : '지출'}</strong></div>
                 <div className="draft-amount">{won(reply.draft.amount)}</div>
                 <div className="draft-details"><span>거래일 <strong>{dateLabel(reply.draft.date)}</strong></span><span>유형 <strong>{reply.draft.type === 'income' ? '수입' : '지출'}</strong></span>
-                  <span>카테고리 <strong>{categoryFor(reply.draft.categoryId)?.name}</strong></span><span>사용처 <strong>{reply.draft.merchant || '미입력'}</strong></span></div>
+                  <span>카테고리 <strong>{categoryFor(reply.draft.categoryId)?.name ?? '직접 선택 필요'}</strong></span><span>사용처 <strong>{reply.draft.merchant || '미입력'}</strong></span></div>
                 {reply.draft.memo && <p className="draft-memo">메모: {reply.draft.memo}</p>}
                 {!message.confirmed && <div className="draft-actions"><Button variant="outline" onClick={() => onEditDraft(reply.draft, () => markConfirmed(message.id))}>수정 후 저장</Button>
-                  <Button onClick={() => confirm(message, reply.draft)}><Check size={15} /> 거래 확정</Button></div>}
+                  <Button disabled={!reply.draft.categoryId} onClick={() => confirm(message, reply.draft)}><Check size={15} /> 거래 확정</Button></div>}
               </div>}
             </div>
           </div> })}
@@ -88,10 +88,10 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
         <div className="chat-compose">
           {error && <div className="chat-error" role="alert">{error}<Button variant="ghost" size="sm" onClick={onTransactions}>거래 목록 열기</Button></div>}
           <form onSubmit={(event) => { event.preventDefault(); void send() }}><label className="sr-only" htmlFor="chat-input">가계부 도우미에게 질문</label>
-            <Textarea id="chat-input" placeholder="예: 오늘 점심에 12,000원 썼어" rows={2} value={text} onChange={(event) => setText(event.target.value)}
+            <Textarea id="chat-input" placeholder="카드 문자 또는 오늘 오후 3시에 카페에서 5천원 썼어" rows={3} value={text} onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
             <Button type="submit" disabled={!text.trim() || loading} aria-label="메시지 보내기"><Send size={17} /></Button></form>
-          <small>저장된 거래를 기준으로 각본형 응답을 만듭니다. 실제 AI나 서버와 연결되지 않습니다.</small>
+          <small>Enter로 보내기 · Shift+Enter로 줄바꿈. 목 기능이며 실제 AI나 서버와 연결되지 않습니다.</small>
         </div>
       </Card>
       <aside className="assistant-side"><div className="assistant-side-card"><span className="side-sparkle">✦</span><div className="eyebrow">HOW IT WORKS</div><h2>가볍게 물어보세요</h2><p>자연스러운 문장으로 거래를 기록하거나 내역을 확인할 수 있어요.</p>

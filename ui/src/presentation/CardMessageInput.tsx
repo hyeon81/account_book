@@ -1,50 +1,78 @@
 import { useState } from 'react'
-import { ClipboardPaste } from 'lucide-react'
+import { MessageSquare, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { categoryFor, seoulToday } from '@/domain/transaction'
+import { categoryFor, monthOf, seoulToday } from '@/domain/transaction'
 import type { TransactionInput } from '@/domain/transaction'
-import { parseCardMessage } from '@/infrastructure/cardMessage'
+import { scriptedAssistant } from '@/infrastructure/scriptedAssistant'
 
 type Props = {
   initiallyOpen: boolean
   onDraft: (draft: TransactionInput) => void
   onBlockedChange: (blocked: boolean) => void
 }
+type ChatLine = { role: 'user' | 'assistant'; text: string }
 
 export function CardMessageInput({ initiallyOpen, onDraft, onBlockedChange }: Props) {
   const [message, setMessage] = useState('')
+  const [history, setHistory] = useState<ChatLine[]>([])
+  const [context, setContext] = useState('')
+  const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState('')
   const [invalid, setInvalid] = useState(false)
   const today = seoulToday()
-  const example = `[Web발신]\n모아카드 승인\n5,500원 일시불\n${today.replaceAll('-', '/')} 14:30\n달빛커피\n누적 125,500원`
+  const cardExample = `[Web발신]\n모아카드 승인\n5,500원 일시불\n${today.replaceAll('-', '/')} 14:30\n달빛커피\n누적 125,500원`
   const change = (value: string) => {
     setMessage(value)
-    if (!value.trim()) {
-      setNotice(''); setInvalid(false); onBlockedChange(false)
-      return
-    }
-    const result = parseCardMessage(value, today)
-    const blocked = result.kind !== 'draft'
-    setInvalid(blocked)
-    onBlockedChange(blocked)
-    if (result.kind === 'draft') {
-      onDraft(result.draft)
-      const category = categoryFor(result.draft.categoryId)
-      setNotice(category ? `내용을 채웠어요. ${category.name} 추천: ${result.categoryReason} 직접 바꿀 수 있어요.` : '내용을 채웠어요. 분류가 어려워 카테고리를 직접 선택해 주세요.')
-    } else setNotice(result.reason)
+    onBlockedChange(Boolean(value.trim()) || loading)
+  }
+  const send = async () => {
+    const text = message.trim()
+    if (!text || loading) return
+    setMessage(''); setLoading(true); setInvalid(false); onBlockedChange(true)
+    setHistory((lines) => [...lines, { role: 'user', text }])
+    try {
+      const fullMessage = context ? `${context} ${text}` : text
+      const result = await scriptedAssistant.ask(fullMessage, monthOf(today), [])
+      if (result.kind === 'transaction_draft') {
+        onDraft(result.draft)
+        const category = categoryFor(result.draft.categoryId)
+        const reply = `아래 입력 항목을 채웠어요. ${category ? `${category.name} 추천을 확인하고 수정할 수 있어요.` : '카테고리를 직접 선택해 주세요.'} 저장 버튼을 누르기 전에는 기록되지 않아요.`
+        setHistory((lines) => [...lines, { role: 'assistant', text: reply }])
+        setNotice(reply); setContext(''); onBlockedChange(false)
+      } else {
+        setHistory((lines) => [...lines, { role: 'assistant', text: result.reply }])
+        setNotice(result.reply); setInvalid(true)
+        setContext(result.kind === 'clarification' && result.continueContext !== false ? fullMessage : '')
+      }
+    } catch (cause) {
+      const reply = cause instanceof Error ? cause.message : '문장을 읽지 못했어요. 다시 보내 주세요.'
+      setHistory((lines) => [...lines, { role: 'assistant', text: reply }])
+      setNotice(reply); setInvalid(true); setMessage(text)
+    } finally { setLoading(false) }
   }
 
   return <details className="card-message-input" open={initiallyOpen}>
-    <summary><ClipboardPaste size={16} /> 카드 문자로 자동 입력 <span>체험</span></summary>
+    <summary><MessageSquare size={16} /> 채팅으로 거래 채우기 <span>목 체험</span></summary>
     <div className="card-message-body">
-      <p>결제 승인 문자 한 건을 붙여넣으면 날짜·금액·사용처와 카테고리를 채워요. 저장 전 내용을 확인해 주세요.</p>
-      <Label htmlFor="card-message">카드 승인 문자</Label>
-      <Textarea id="card-message" rows={5} value={message} placeholder={example} onChange={(event) => change(event.target.value)} aria-invalid={invalid} aria-describedby="card-message-notice" />
-      <div className="card-message-tools"><Button type="button" variant="outline" size="sm" onClick={() => change(example)}>예시 체험</Button>
-        {message && <Button type="button" variant="ghost" size="sm" onClick={() => change('')}>직접 입력으로 계속</Button>}</div>
-      <small id="card-message-notice" className={invalid ? 'field-error' : 'card-message-notice'} role="status">{notice || '규칙으로 처리하는 목 기능입니다. 실제 AI나 외부 서버로 전송하지 않습니다.'}</small>
+      <p>카드 문자 또는 지출 문장을 보내면 아래 거래 항목을 채워요. 실제 AI 연결 없이 규칙으로 처리합니다.</p>
+      <div className="form-input-chat" role="log" aria-label="거래 입력 대화" aria-live="polite">
+        {history.length ? history.map((line, index) => <div key={index} className={`form-chat-line ${line.role}`}><strong>{line.role === 'user' ? '나' : '모아'}</strong><span>{line.text}</span></div>)
+          : <div className="form-chat-line assistant"><strong>모아</strong><span>“오늘 오후 3시에 카페에서 5천원 썼어”처럼 알려주세요. 카드 문자도 같은 채팅에 붙여넣을 수 있어요.</span></div>}
+        {loading && <div className="form-chat-line assistant"><strong>모아</strong><span>초안을 만들고 있어요…</span></div>}
+      </div>
+      <Label htmlFor="card-message">카드 문자 또는 거래 문장</Label>
+      <Textarea id="card-message" rows={3} value={message} placeholder="오늘 오후 3시에 카페에서 5천원 썼어" disabled={loading}
+        onChange={(event) => change(event.target.value)} aria-invalid={invalid} aria-describedby="card-message-notice"
+        onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
+      <div className="card-message-tools">
+        <Button type="button" size="sm" disabled={loading || !message.trim()} onClick={() => void send()}><Send size={14} /> 문장 보내기</Button>
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => change('오늘 오후 3시에 카페에서 5천원 썼어')}>문장 예시</Button>
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => change(cardExample)}>카드 문자 예시</Button>
+        <Button type="button" variant="ghost" size="sm" disabled={loading} onClick={() => { change(''); setContext(''); setInvalid(false); setNotice('채팅 내용을 지웠어요. 아래 항목을 직접 수정할 수 있어요.'); setHistory([]) }}>직접 입력으로 계속</Button>
+      </div>
+      <small id="card-message-notice" className={invalid ? 'field-error' : 'card-message-notice'} role="status">{notice || 'Enter로 보내기 · Shift+Enter로 줄바꿈. 내용은 외부 서버로 보내지 않습니다.'}</small>
     </div>
   </details>
 }

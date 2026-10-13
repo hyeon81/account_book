@@ -50,5 +50,10 @@
 .card-message-body textarea { font-size: 12px; line-height: 1.6; resize: vertical; }
 .card-message-tools { display: flex; flex-wrap: wrap; gap: 6px; }
 .card-message-notice { color: #527b57; font-size: 11px; line-height: 1.6; }
+.form-input-chat { display: grid; gap: 8px; max-height: 175px; overflow-y: auto; padding: 8px 0; }
+.form-chat-line { display: flex; align-items: start; gap: 8px; font-size: 11px; line-height: 1.6; }
+.form-chat-line strong { color: #78917e; flex: 0 0 28px; padding-top: 8px; }
+.form-chat-line span { white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 9px; padding: 8px 10px; background: #eaf1e8; color: #48614d; }
+.form-chat-line.user span { background: #315847; color: #fff; }
 @media (max-width: 900px) { .transaction-toolbar { flex-direction: column; align-items: stretch; } .filters { justify-content: end; } .transaction-table-head { display: none; } .transaction-row { grid-template-columns: 40px minmax(120px,1fr) 100px; row-gap: 2px; } .transaction-date { grid-column: 2; grid-row: 2; } .transaction-amount { grid-column: 3; grid-row: 1; } .row-actions { grid-column: 3; grid-row: 2; opacity: 1; } }
 @media (max-width: 540px) { .heading-add { align-self: start; } .transaction-toolbar { padding: 18px; } .filters { justify-content: stretch; } .filter-icon { display: none; } .filter-select { flex: 1; min-width: 0; } .transaction-list-heading { padding: 21px 18px 13px; } .transaction-row { padding: 12px 14px; grid-template-columns: 37px minmax(100px,1fr) 95px; column-gap: 8px; } .transaction-amount { font-size: 11px; } .transaction-form { grid-template-columns: 1fr; } .form-field:nth-of-type(5),.form-field:nth-of-type(6),.form-actions,.form-error { grid-column: auto; } }
