@@ -43,7 +43,10 @@ account_book/
 │   │   ├── agent-architecture.md
 │   │   ├── category-rag.md
 │   │   ├── chat-statistics.md
-│   │   └── rule-statistics.md
+│   │   ├── rule-statistics.md
+│   │   ├── plan-and-execute.md
+│   │   ├── tools.md
+│   │   └── mcp.md
 │   ├── agent-account-book-design.md
 │   ├── development-rules.md
 │   ├── python-conventions.md
@@ -58,7 +61,7 @@ account_book/
 
 ## 설계 문서
 
-[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 실제 AI 연동은 후속 구현이며 현재 각본형 UI 도우미와 구분합니다.
+[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계, 규칙 기반 통계와 Plan-and-Execute를 정리했습니다. [공통 도구 계약](docs/ai/tools.md)과 [외부 AI용 MCP 설계](docs/ai/mcp.md)도 함께 제공합니다. 실제 AI 연동은 후속 구현이며 현재 각본형 UI 도우미와 구분합니다.
 
 [AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 Mermaid 시스템 구성도, UI 서버·API 서버·에이전트·DB의 기술 스택, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
 

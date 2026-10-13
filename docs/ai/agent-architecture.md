@@ -1,6 +1,6 @@
 # 가계부 AI의 공통 에이전트 구조
 
-세 기능은 하나의 에이전트 서비스에서 목적별 처리 흐름을 선택한다. 질문 해석과 도구 선택은 모델이 맡고 서버는 검증·계산·저장을 책임진다. 기능마다 별도 에이전트나 자율 협업을 도입하지 않는다.
+네 기능은 하나의 에이전트 서비스에서 목적별 처리 흐름을 선택한다. 질문 해석과 도구 선택은 모델이 맡고 서버는 검증·계산·저장을 책임진다. 기능마다 별도 에이전트나 자율 협업을 도입하지 않는다.
 
 ## 서비스와 도구의 책임
 
@@ -25,6 +25,7 @@ flowchart LR
 | --- | --- | --- |
 | 카테고리 추천 | `list_categories`, `retrieve_category_evidence` | 추천 또는 추가 질문 |
 | 채팅 통계 | `resolve_period`, `aggregate_transactions` | 기간·필터를 포함한 집계 |
+| Plan-and-Execute | `resolve_period`, `aggregate_transactions`, `compare_aggregates` | 두 완료 주의 검증된 지출 비교 |
 | 규칙 통계 | `list_statistic_rules`, `validate_statistic_rule`, `evaluate_statistic_rule` | 규칙 초안 또는 계산 결과 |
 
 `prepare_transaction`은 기존 설계의 거래 초안 도구다. 실제 저장은 UI에서 사용자가 확인한 뒤 서버가 처리한다. 규칙 저장·활성화도 사용자 확인 경로로 처리한다. 모델에는 확정·삭제·활성화·임의 SQL 실행 도구를 제공하지 않는다.
@@ -55,3 +56,10 @@ flowchart LR
 - 모듈 배치는 [개발 규칙](../development-rules.md)의 계층 경계를 따른다.
 
 기능별 예시는 [설계 색인](README.md)에서 이어 읽는다.
+
+## 공통 도구와 외부 연결
+
+[도구 계약](tools.md)은 위 세 기능과 [Plan-and-Execute](plan-and-execute.md)의
+기간·집계·근거·규칙 계약을 모은다. 계획은 모델이 생성하고 서버가 검증한 뒤 실행한다.
+[MCP 어댑터](mcp.md)는 서버 유스케이스를 재사용하며 초기에는 조회 도구만 외부에 노출한다.
+기존 API 서버와 에이전트 간 내부 HTTP 경계는 유지한다.
