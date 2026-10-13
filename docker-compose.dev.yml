@@ -1,0 +1,31 @@
+name: account-book-dev
+
+services:
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./ui/src:/app/src:ro
+      - ./ui/tests:/app/tests:ro
+      - ./ui/index.html:/app/index.html:ro
+      - ./ui/vite.config.ts:/app/vite.config.ts:ro
+      - ./ui/tsconfig.json:/app/tsconfig.json:ro
+      - ./ui/tsconfig.app.json:/app/tsconfig.app.json:ro
+      - ./ui/tsconfig.node.json:/app/tsconfig.node.json:ro
+      - ./ui/components.json:/app/components.json:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+  scripts:
+    extends:
+      file: compose.yaml
+      service: scripts
+    profiles: ["checks"]
