@@ -49,6 +49,7 @@ account_book/
     │   ├── ui-design.md
     │   ├── dashboard.md
     │   ├── transactions.md
+    │   ├── reports.md
     │   ├── assistant.md
     │   └── mock-ui-development.md
     ├── agent-account-book-design.md
@@ -67,7 +68,7 @@ account_book/
 
 [Python 개발 규칙](docs/python-conventions.md)에는 패키지와 import, 타입, 예외, 로깅, 테스트 방식을 정리했습니다. [API 계약](docs/api-contract.md)에는 경로별 입력·출력과 오류 응답 규칙을 정리했습니다.
 
-[UI 공통 설계](docs/ui_docs/ui-design.md)에서 페이지별 문서로 이동할 수 있습니다. [대시보드](docs/ui_docs/dashboard.md), [거래 목록·입력](docs/ui_docs/transactions.md), [AI 도우미](docs/ui_docs/assistant.md)에 각 화면의 구조·동작·완료 기준을 정리했습니다.
+[UI 공통 설계](docs/ui_docs/ui-design.md)에서 페이지별 문서로 이동할 수 있습니다. [대시보드](docs/ui_docs/dashboard.md), [거래 목록·입력](docs/ui_docs/transactions.md), [리포트](docs/ui_docs/reports.md), [AI 도우미](docs/ui_docs/assistant.md)에 각 화면의 구조·동작·완료 기준을 정리했습니다.
 
 ## 문서 검증
 

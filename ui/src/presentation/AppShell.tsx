@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowDownUp, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
+import { ArrowDownUp, ChartNoAxesCombined, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { monthOf, seoulToday } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
@@ -8,8 +8,9 @@ import { DashboardPage } from './DashboardPage'
 import { TransactionsPage } from './TransactionsPage'
 import { AssistantPage } from './AssistantPage'
 import { TransactionForm } from './TransactionForm'
+import { ReportsPage } from './ReportsPage'
 
-type Page = 'dashboard' | 'transactions' | 'assistant'
+type Page = 'dashboard' | 'transactions' | 'assistant' | 'reports'
 type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void; cardMessage?: boolean }
 
 function initialLedger(): { items: Transaction[]; error: string } {
@@ -20,6 +21,7 @@ function initialLedger(): { items: Transaction[]; error: string } {
 const navigation = [
   { id: 'dashboard', label: '대시보드', icon: LayoutDashboard },
   { id: 'transactions', label: '거래 내역', icon: ArrowDownUp },
+  { id: 'reports', label: '리포트', icon: ChartNoAxesCombined },
   { id: 'assistant', label: '입력 도우미', icon: Sparkles },
 ] as const
 
@@ -89,6 +91,7 @@ export function AppShell() {
             onAdd={() => setForm({ mode: 'create' })} onTransactions={() => setPage('transactions')} /></div>
           <div hidden={page !== 'transactions'}><TransactionsPage month={month} onMonthChange={setMonth} transactions={ledger.items}
             onAdd={() => setForm({ mode: 'create' })} onEdit={edit} onDelete={remove} /></div>
+          <div hidden={page !== 'reports'}><ReportsPage month={month} onMonthChange={setMonth} transactions={ledger.items} /></div>
           <div hidden={page !== 'assistant'}><AssistantPage month={month} transactions={ledger.items}
             onConfirmDraft={confirmDraft} onEditDraft={(draft, afterSave) => setForm({ mode: 'draft', initial: draft, afterSave })}
             onCardMessage={() => setForm({ mode: 'create', cardMessage: true })}
