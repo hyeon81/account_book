@@ -1,0 +1,18 @@
+# Only UI source, configuration, and tests enter the build context.
+*
+!Dockerfile
+!Dockerfile.dev
+!components.json
+!package.json
+!package-lock.json
+!index.html
+!tsconfig*.json
+!vite.config.ts
+!.oxlintrc.json
+!.gitignore
+!src/
+!src/**
+!tests/
+!tests/**
+**/.env
+**/.env.*

@@ -1,0 +1,34 @@
+.report-toolbar { display: flex; justify-content: space-between; align-items: center; margin: -10px 0 20px; gap: 12px; }
+.report-mode { display: flex; gap: 7px; }
+.report-mode [data-slot="button"] { min-height: 38px; border-radius: 9px; }
+.report-note { color: var(--muted-foreground); font-size: 15px; line-height: 1.7; margin-top: 12px; }
+.report-comparison { min-height: auto; margin-top: 16px; }
+.report-table-wrap { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.report-table { width: 100%; border-collapse: collapse; font-size: 16px; white-space: nowrap; }
+.report-table th,.report-table td { text-align: right; padding: 15px 14px; border-bottom: 1px solid var(--border); color: var(--foreground); }
+.report-table tr:last-child th,.report-table tr:last-child td { border-bottom: 0; }
+.report-table th:first-child { text-align: left; }
+.report-table thead th { font-size: 14px; color: var(--muted-foreground); background: var(--muted); font-weight: 750; }
+.report-category-row small { display: block; text-align: right; color: var(--muted-foreground); font-weight: 500; margin-top: 4px; }
+.report-source { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 8px; background: var(--secondary); color: var(--secondary-foreground); font-size: 14px; font-weight: 750; border: 1px solid var(--border); }
+.report-source.sample { background: #fff6ed; color: #9a5d38; border-color: #efd8c4; }
+.report-metrics .metric-card strong { font-size: clamp(20px,2.3vw,28px); }
+.report-grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(300px,.8fr); gap: 16px; margin-top: 20px; }
+.report-card { padding: 27px 28px; min-height: 348px; }
+.report-heading-icon { color: var(--primary); margin-bottom: 4px; }
+.weekly-chart { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: 14px; align-items: end; height: 235px; margin-top: 28px; }
+.weekly-bar { display: grid; grid-template-rows: 24px 1fr 22px; gap: 9px; min-width: 0; text-align: center; }
+.weekly-value { color: var(--muted-foreground); font-size: 13px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-track { height: 100%; min-height: 150px; border-radius: 10px; background: var(--muted); display: flex; align-items: end; overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
+.weekly-track span { width: 100%; border-radius: 10px 10px 0 0; background: var(--primary); }
+.weekly-bar strong { color: var(--muted-foreground); font-size: 13px; }
+.report-category-list { display: grid; gap: 19px; margin-top: 27px; }
+.report-category-row { display: grid; grid-template-columns: 39px minmax(0,1fr) auto; align-items: center; gap: 13px; }
+.report-category-row div { min-width: 0; }
+.report-category-row strong { color: var(--foreground); font-size: 16px; display: block; margin-bottom: 8px; }
+.report-category-row > span:last-child { color: var(--foreground); font-size: 16px; font-weight: 750; }
+.report-insight { margin-top: 16px; padding: 25px 28px; display: grid; grid-template-columns: 220px minmax(0,1fr); gap: 20px; align-items: center; background: color-mix(in srgb,var(--accent) 48%,var(--card)); border-color: var(--border); }
+.report-insight h2 { color: var(--foreground); font-size: 19px; letter-spacing: -.02em; margin: 7px 0 0; }
+.report-insight p { color: var(--muted-foreground); font-size: 16px; line-height: 1.8; margin: 0; }
+@media (max-width: 920px) { .report-grid { grid-template-columns: 1fr; } .report-insight { grid-template-columns: 1fr; } }
+@media (max-width: 540px) { .report-toolbar { align-items: flex-start; flex-direction: column; margin-top: -6px; } .report-mode { width: 100%; } .report-mode [data-slot="button"] { flex: 1; } .report-card { padding: 22px 18px; } .weekly-chart { gap: 8px; height: 210px; } .weekly-value { font-size: 12px; } .weekly-track { min-height: 130px; } .report-category-row { grid-template-columns: 37px minmax(0,1fr); } .report-category-row > span:last-child { grid-column: 2; } }

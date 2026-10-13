@@ -73,9 +73,11 @@ Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 �
 
 등록 결과와 답변에는 실제 저장 여부, 적용 기간과 필터를 보여준다. 조회할 기록이 없으면 기록이 없다고 안내한다. 불완전한 입력을 임의의 거래로 저장하지 않는다.
 
-각 화면의 구성과 상태별 동작은 [UI 공통 설계](../ui_docs/ui-design.md)에서 연결한 페이지별 문서에 정리한다.
+각 화면의 구성과 상태별 동작은 [UI 공통 설계](ui_docs/ui-design.md)에서 연결한 페이지별 문서에 정리한다.
 
 ## 초기 기능 범위
+
+카테고리 추천과 통계의 교육용 확장 설계는 [가계부 AI 설계](ai/README.md)에 정리한다. RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계는 후속 구현 제안이며 아래 초기 범위가 이미 구현되었다는 뜻은 아니다.
 
 첫 구현은 수입과 지출의 직접 등록, 목록 조회, 수정과 삭제, 월별 합계, 카테고리별 합계, 자연어 등록 초안, 자연어 조회에 집중한다. 카테고리는 초기 기본 목록을 제공하고 분류가 애매하면 사용자가 선택한다.
 
@@ -343,20 +345,20 @@ account_book/
 │   ├── Dockerfile
 │   ├── src/
 │   └── tests/
-├── docs/
-│   ├── agent-account-book-design.md
-│   ├── development-rules.md
-│   ├── python-conventions.md
-│   └── api-contract.md
-└── ui_docs/
-    ├── ui-design.md
-    ├── dashboard.md
-    ├── transactions.md
-    ├── assistant.md
-    └── mock-ui-development.md
+└── docs/
+    ├── agent-account-book-design.md
+    ├── development-rules.md
+    ├── python-conventions.md
+    ├── api-contract.md
+    └── ui_docs/
+        ├── ui-design.md
+        ├── dashboard.md
+        ├── transactions.md
+        ├── assistant.md
+        └── mock-ui-development.md
 ```
 
-현재는 README, `docs`와 `ui_docs`의 문서, 문서 검증 스크립트와 이를 실행하는 Compose 서비스가 작성되어 있다. 가계부 애플리케이션 서비스는 구현 예정 구조다.
+현재는 문서, 검증 스크립트, Compose 검증 서비스와 브라우저 저장소로 동작하는 `ui/` 가계부가 작성되어 있다. 입력 도우미는 각본형 대역이며 API 서버·에이전트·DB 서비스는 구현 예정 구조다.
 
 ## 구현 순서와 완료 기준
 

@@ -24,3 +24,27 @@ def test_missing_local_link_is_reported() -> None:
     )
 
     assert any("missing local link target" in error for error in errors)
+
+
+def test_nested_documents_are_validated(tmp_path) -> None:
+    (tmp_path / "README.md").write_text("# Home\n", encoding="utf-8")
+    nested = tmp_path / "docs" / "ai"
+    nested.mkdir(parents=True)
+    page = nested / "category.md"
+    page.write_text("# Category\n[Missing](missing.md)\n```json\n{broken}\n```\n", encoding="utf-8")
+
+    errors = validate_docs.validate(tmp_path)
+
+    assert any(str(page) in error and "missing local link target" in error for error in errors)
+    assert any(str(page) in error and "invalid JSON" in error for error in errors)
+
+
+def test_nested_heading_links_are_validated(tmp_path) -> None:
+    (tmp_path / "README.md").write_text("[RAG](docs/ai/category.md#검색)\n", encoding="utf-8")
+    nested = tmp_path / "docs" / "ai"
+    nested.mkdir(parents=True)
+    (nested / "category.md").write_text("# 검색\n", encoding="utf-8")
+
+    errors = validate_docs.validate(tmp_path)
+
+    assert not any("missing heading" in error for error in errors)

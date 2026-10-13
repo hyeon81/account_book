@@ -1,4 +1,9 @@
 services:
+  ui:
+    build:
+      context: ./ui
+    ports:
+      - "127.0.0.1:8080:8080"
   scripts:
     build:
       context: .
@@ -12,12 +17,20 @@ services:
         target: /workspace/README.md
         read_only: true
       - type: bind
-        source: ./docs
-        target: /workspace/docs
+        source: ./VERSION
+        target: /workspace/VERSION
         read_only: true
       - type: bind
-        source: ./ui_docs
-        target: /workspace/ui_docs
+        source: ./CHANGELOG.md
+        target: /workspace/CHANGELOG.md
+        read_only: true
+      - type: bind
+        source: ./ui/README.md
+        target: /workspace/ui/README.md
+        read_only: true
+      - type: bind
+        source: ./docs
+        target: /workspace/docs
         read_only: true
       - type: bind
         source: ./scripts
