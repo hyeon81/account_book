@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, CirclePlus } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, CirclePlus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -53,8 +53,8 @@ export function DashboardPage({ month, onMonthChange, transactions, onAdd, onTra
                 ))}
               </div> : <div className="empty-inline"><p>이 달에 기록된 거래가 없습니다.</p><Button variant="outline" onClick={onAdd}><CirclePlus size={16} /> 거래 추가</Button></div>}
             </Card>
-            <Card className="surface-card insight-card"><div className="insight-art"><div className="insight-orb one" /><div className="insight-orb two" /><span>✦</span></div>
-              <div className="eyebrow">A LITTLE INSIGHT</div><h2>작은 기록이<br />큰 차이를 만들어요.</h2>
+            <Card className="surface-card insight-card"><span className="insight-art"><Sparkles size={25} /></span>
+              <div className="eyebrow">오늘의 기록</div><h2>꾸준한 기록,<br />더 선명한 소비 흐름.</h2>
               <p>오늘의 지출을 남기고 나만의 소비 흐름을 알아보세요.</p>
               <Button onClick={onAdd}>새 거래 기록하기 <ArrowRight size={16} /></Button>
             </Card>

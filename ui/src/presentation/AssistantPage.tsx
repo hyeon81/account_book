@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowRight, Check, ClipboardPaste, Send, Sparkles, WandSparkles } from 'lucide-react'
+import { ArrowRight, Check, ClipboardPaste, Coffee, Send, Sparkles, TrendingDown, Utensils, WandSparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,9 +20,9 @@ type Props = {
 }
 
 const examples = [
-  { icon: '✳', title: '채팅 입력', prompt: '오늘 오후 3시에 카페에서 5천원 썼어' },
-  { icon: '◈', title: '지출 확인', prompt: '이번 달 식비 얼마야?' },
-  { icon: '↗', title: '다른 달 조회', prompt: '지난달 지출 얼마야?' },
+  { icon: Coffee, title: '거래 기록', prompt: '오늘 오후 3시에 카페에서 5천원 썼어' },
+  { icon: Utensils, title: '카테고리 조회', prompt: '이번 달 식비 얼마야?' },
+  { icon: TrendingDown, title: '월별 조회', prompt: '지난달 지출 얼마야?' },
 ]
 
 export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft, onTransactions, onCardMessage }: Props) {
@@ -59,14 +59,14 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
-    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자를 붙여넣거나 문장으로 거래를 입력해 보세요. 저장 전 직접 수정할 수 있어요.</p></div>
+    <div className="page-heading"><div><div className="eyebrow">간편 입력</div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자나 짧은 문장으로 거래를 기록하세요.</p></div>
       <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 채팅으로 거래 채우기</Button></div>
     <div className="assistant-layout">
       <Card className="surface-card chat-panel">
-        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>각본형 응답 · 저장 전 확인 필요</small></div><Badge variant="secondary" className="chat-online"><span /> 준비됨</Badge></div>
+        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>초안을 확인하고 저장해 주세요</small></div><Badge variant="secondary" className="chat-online">목 체험</Badge></div>
         <div className="chat-messages" aria-live="polite">
-          {messages.length === 0 && <div className="chat-welcome"><span className="welcome-icon"><WandSparkles size={27} /></span><h2>무엇을 도와드릴까요?</h2><p>거래를 기록하거나 이번 달 지출을 물어보세요.<br />정해진 문장 패턴만 처리합니다.</p>
-            <div className="suggestions">{examples.map((example) => <Button key={example.prompt} variant="outline" onClick={() => void send(example.prompt)}><span>{example.icon}</span><small>{example.title}</small><strong>{example.prompt}</strong><ArrowRight size={15} /></Button>)}</div>
+          {messages.length === 0 && <div className="chat-welcome"><span className="welcome-icon"><WandSparkles size={27} /></span><h2>어떤 거래를 기록할까요?</h2><p>문장을 보내면 수정 가능한 초안을 만들어요.<br />아래 예시로 먼저 체험해 보세요.</p>
+            <div className="suggestions">{examples.map(({ icon: Icon, title, prompt }) => <Button key={prompt} variant="outline" onClick={() => void send(prompt)}><span className="suggestion-icon"><Icon size={19} /></span><span className="suggestion-copy"><small>{title}</small><strong>{prompt}</strong></span><ArrowRight size={16} /></Button>)}</div>
           </div>}
           {messages.map((message) => { const reply = message.reply; return <div key={message.id} className={`message ${message.role}`}>
             {message.role === 'assistant' && <span className="message-avatar"><Sparkles size={15} /></span>}
@@ -91,7 +91,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
             <Textarea id="chat-input" placeholder="카드 문자 또는 오늘 오후 3시에 카페에서 5천원 썼어" rows={3} value={text} onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
             <Button type="submit" disabled={!text.trim() || loading} aria-label="메시지 보내기"><Send size={17} /></Button></form>
-          <small>Enter로 보내기 · Shift+Enter로 줄바꿈. 목 기능이며 실제 AI나 서버와 연결되지 않습니다.</small>
+          <small>Enter로 보내기 · Shift+Enter로 줄바꿈<br />목 체험으로, 실제 AI에 연결되지 않습니다.</small>
         </div>
       </Card>
       <aside className="assistant-side"><div className="assistant-side-card"><span className="side-sparkle">✦</span><div className="eyebrow">HOW IT WORKS</div><h2>가볍게 물어보세요</h2><p>자연스러운 문장으로 거래를 기록하거나 내역을 확인할 수 있어요.</p>
