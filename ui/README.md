@@ -1,6 +1,6 @@
 # 모아 가계부 UI
 
-서버 없이 동작하는 React·TypeScript·Vite 가계부입니다. shadcn/ui 컴포넌트를 사용합니다. 직접 입력한 거래는 브라우저의 `localStorage`에 저장되어 새로고침해도 유지됩니다. 저장소는 브라우저·출처별로 분리되며 다른 기기와 동기화되지 않습니다. API 서버, DB, OpenAI 키는 필요하지 않습니다.
+서버 없이 동작하는 React·TypeScript·Vite 가계부입니다. shadcn/ui 컴포넌트를 사용합니다. 직접 입력한 거래는 브라우저의 `localStorage`에 저장되어 새로고침해도 유지됩니다. 저장소는 브라우저·출처별로 분리되며 다른 기기와 동기화되지 않습니다. 직접 입력에는 API 서버, DB, OpenAI 키가 필요하지 않습니다. AI 카테고리 추천에는 RAG API 서버와 서버용 OpenAI 키가 필요합니다.
 
 ## 실행
 
@@ -36,3 +36,7 @@ npm --prefix ui run lint
 ```
 
 도메인과 계산 코드는 `src/domain`, `src/application`에, 로컬 저장과 각본형 도우미는 `src/infrastructure`에, 화면은 `src/presentation`에 있습니다. 테스트는 `tests` 아래에 같은 경로로 둡니다. 향후 API·AI 호출은 인프라 경계에서 연결합니다.
+
+## AI 카테고리 추천
+
+거래 입력·수정 폼의 AI 버튼으로 RAG 카테고리 추천을 받습니다. 사용처 또는 메모가 필요하며 추천은 수정 후 저장합니다. 서버 구성은 [RAG 실행 문서](../docs/ai/category-rag-implementation.md)를 참고하세요. 로컬 UI만 실행할 경우 API 주소는 기본 localhost:8000이고, 변경은 API_PROXY_TARGET 환경변수로 지정합니다.

@@ -1,7 +1,14 @@
 name: account-book-dev
 
 services:
+  api:
+    extends:
+      file: compose.yaml
+      service: api
   ui:
+    depends_on:
+      api:
+        condition: service_healthy
     build:
       context: ./ui
       dockerfile: Dockerfile.dev
@@ -9,6 +16,7 @@ services:
       - "127.0.0.1:5173:5173"
     environment:
       VITE_USE_POLLING: "true"
+      API_PROXY_TARGET: http://api:8000
     volumes:
       - ./ui/src:/app/src:ro
       - ./ui/tests:/app/tests:ro

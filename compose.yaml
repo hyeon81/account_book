@@ -1,5 +1,23 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_CATEGORY_MODEL: ${OPENAI_CATEGORY_MODEL:-gpt-4.1-mini}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   ui:
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_PROXY_TARGET: http://api:8000
     build:
       context: ./ui
     ports:
@@ -39,6 +57,10 @@ services:
       - type: bind
         source: ./tests
         target: /workspace/tests
+        read_only: true
+      - type: bind
+        source: ./server
+        target: /workspace/server
         read_only: true
       - type: bind
         source: ./pytest.ini

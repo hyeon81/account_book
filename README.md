@@ -8,7 +8,7 @@
 
 ## 현재 상태
 
-브라우저에서 동작하는 가계부 UI가 있습니다. 거래 입력·조회·수정·삭제와 월별 집계는 브라우저 저장소를 사용하므로 새로고침 뒤에도 유지됩니다. Docker Compose로 UI를 실행하면 `http://localhost:8080`에서 접속할 수 있습니다. API 서버·에이전트·DB는 아직 구현되지 않았습니다.
+브라우저에서 동작하는 가계부 UI가 있습니다. 거래 입력·조회·수정·삭제와 월별 집계는 브라우저 저장소를 사용하므로 새로고침 뒤에도 유지됩니다. Docker Compose로 UI를 실행하면 `http://localhost:8080`에서 접속할 수 있습니다. AI 카테고리 추천은 로컬 API 서버의 RAG 검색과 OpenAI 생성으로 동작합니다. 별도 에이전트·DB는 아직 구현되지 않았습니다.
 
 ## 프로젝트 구성
 
@@ -60,7 +60,7 @@ account_book/
 
 ## 설계 문서
 
-[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 실제 AI 연동은 후속 구현이며 현재 각본형 UI 도우미와 구분합니다.
+[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 카테고리 추천의 실행 방법과 API는 [RAG 구현 문서](docs/ai/category-rag-implementation.md)를 참고하세요. 채팅 도우미는 기존 각본형 대역입니다.
 
 [AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 Mermaid 시스템 구성도, UI 서버·API 서버·에이전트·DB의 기술 스택, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
 
@@ -92,7 +92,7 @@ docker compose run --rm scripts python scripts/validate_docs.py
 
 백그라운드 실행은 `docker compose up -d --build`, 종료는 `docker compose down`을 사용합니다. UI는 기존 Node.js 의존성으로 빌드하고 Vite 미리보기 서버로 제공합니다. 8080 포트는 로컬 컴퓨터에서만 접근할 수 있습니다. UI 이미지에는 UI 소스·설정·테스트만 포함하며 실제 `.env` 파일은 넣지 않습니다.
 
-검증 컨테이너에는 README, 문서, 스크립트와 테스트만 읽기 전용으로 연결합니다. 실제 `.env` 파일과 API 키는 이미지와 컨테이너에 넣지 않습니다. 로컬 Python 환경에서 테스트하려면 승인된 개발 의존성을 `python -m pip install -r requirements-dev.txt`로 설치한 뒤 `pytest`를 실행합니다.
+검증 컨테이너에는 README, 문서, 스크립트와 테스트만 읽기 전용으로 연결합니다. 실제 `.env` 파일과 API 키는 이미지에 넣지 않습니다. RAG API 컨테이너에는 서버용 `OPENAI_API_KEY` 환경변수를 전달합니다. 로컬 Python 환경에서 테스트하려면 승인된 개발 의존성을 `python -m pip install -r requirements-dev.txt`로 설치한 뒤 `pytest`를 실행합니다.
 
 GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사용합니다. 개발 이미지에는 Python, `pytest`, Git, SSH 클라이언트가 들어 있으며, 작업 공간을 일반 사용자 `vscode`로 엽니다. 컨테이너 생성 후 Git 실행, 테스트, 문서 검증을 확인합니다. GitHub 인증은 Codespaces가 제공하는 방법을 사용하고 키를 이미지에 복사하지 않습니다.
 
@@ -100,7 +100,7 @@ GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사
 
 ## 개발 및 실행 계획
 
-가계부 UI는 서버 없이 실행할 수 있지만 브라우저 밖의 데이터 영속성·동기화는 아직 없습니다. 서버와 에이전트 구현이 진행되면 서비스별 의존성과 실행 방법을 추가합니다.
+가계부 UI는 서버 없이 실행할 수 있지만 브라우저 밖의 데이터 영속성·동기화는 아직 없습니다. RAG 추천 API는 표준 라이브러리로 구현했으며, 별도 에이전트와 DB 구현은 후속 범위입니다.
 
 ## 문서 업데이트
 
