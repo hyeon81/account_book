@@ -6,7 +6,7 @@
 - Primary product surfaces: 대시보드, 거래 내역, 리포트, 입력 도우미, 거래 입력 대화상자.
 - Evidence reviewed: `ui/components.json`, `ui/src/components/ui`, `ui/src/presentation`, `ui/src/styles`, 사용자의 글자 확대 요청.
 - Observed: shadcn/ui 기반 컴포넌트를 사용하지만 화면별 CSS 색상과 크기가 서로 달랐다.
-- Assumption: 개인 가계부에 맞는 차분하고 읽기 쉬운 화면을 선호한다.
+- Direction: 사용자의 재요청에 따라 흑백 중심의 모던하고 간결한 도구형 화면으로 변경한다.
 
 ## Brand
 - Personality: 차분함, 명확함, 일상적인 한국어.
@@ -34,16 +34,16 @@
 - Tradeoffs: 정보 밀도보다 읽기 쉬운 여백을 우선한다.
 
 ## Visual language
-- Color: 중립 배경, 흰 카드, 진한 에메랄드 강조, 선명한 보조 글자.
+- Color: 흰 배경, charcoal 버튼과 제목, zinc 보조 글자. 수입·오류 상태에만 의미 있는 색상을 쓴다.
 - Typography: 기존 Geist / Malgun Gothic. 금액은 tabular-nums, 제목 28–34px.
 - Spacing/layout rhythm: 8px 기준, 카드 24px, 페이지 24–40px.
-- Shape/radius/elevation: 12px 카드, 8px 입력 요소, 약한 그림자.
+- Shape/radius/elevation: 10px 카드, 8px 입력 요소, 얇은 경계선. 장식 그림자는 최소화한다.
 - Motion: 기존 짧은 상태 전환만 사용.
 - Imagery/iconography: 기존 Lucide 아이콘. 불필요한 장식 제거.
 
 ## Components
 - Existing components: Button, Card, Badge, Input, Textarea, Select, Dialog, AlertDialog, Table, Progress.
-- New/changed components: 공통 토큰, 탐색·요약 카드·채팅·폼 스타일.
+- New/changed components: 공통 토큰, 최근 거래 카드, 통일된 Lucide 카테고리 아이콘, 채팅 예시와 폼 스타일.
 - Variants and states: primary / outline / ghost, 기존 disabled·focus·error 상태 유지.
 - Token/component ownership: 색상은 `ui/src/index.css`, 배치는 `ui/src/styles`.
 

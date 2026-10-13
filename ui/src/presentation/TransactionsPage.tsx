@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { filterTransactions } from '@/application/ledger'
 import { categories, categoryFor, dateLabel, monthLabel, shiftMonth, won } from '@/domain/transaction'
 import type { Transaction, TransactionType } from '@/domain/transaction'
+import { CategoryIcon } from './CategoryIcon'
 
 type Props = {
   month: string
@@ -37,7 +38,7 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
   return (
     <section aria-labelledby="transactions-title">
       <div className="page-heading">
-        <div><div className="eyebrow">YOUR RECORDS</div><h1 id="transactions-title">거래 내역</h1><p>하나씩 쌓인 기록이 나의 소비를 알려줘요.</p></div>
+        <div><h1 id="transactions-title">거래 내역</h1><p>기록한 거래를 확인하고 관리하세요.</p></div>
         <Button className="heading-add" onClick={onAdd}><Plus size={16} /> 거래 추가</Button>
       </div>
       <Card className="surface-card transaction-panel">
@@ -67,7 +68,7 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
             <div className="transaction-list">
               {items.map((item) => { const category = categoryFor(item.categoryId)
                 return <div className="transaction-row" key={item.id}>
-                  <span className="transaction-icon" style={{ background: `${category?.color ?? '#999'}20`, color: category?.color }}>{category?.icon ?? '·'}</span>
+                  <CategoryIcon categoryId={item.categoryId} className="transaction-icon" />
                   <div className="transaction-description"><strong>{item.merchant || category?.name || '거래'}</strong><small>{category?.name} {item.memo && `· ${item.memo}`}</small></div>
                   <span className="transaction-date">{dateLabel(item.date)}</span>
                   <strong className={`transaction-amount ${item.type}`}>{item.type === 'income' ? '+' : '−'}{won(item.amount)}</strong>

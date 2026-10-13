@@ -62,7 +62,7 @@ export function AppShell() {
           <span className="brand-mark"><Wallet size={21} strokeWidth={2.2} /></span>
           <span><strong>모아</strong><small>나의 가계부</small></span>
         </Button>
-        <div className="sidebar-section-label">WORKSPACE</div>
+        <div className="sidebar-section-label">내 가계부</div>
         <nav className="sidebar-nav" aria-label="페이지">
           {navigation.map(({ id, label, icon: Icon }) => (
             <Button key={id} variant="ghost" className={`nav-item ${page === id ? 'active' : ''}`}
@@ -72,8 +72,7 @@ export function AppShell() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-tip"><Sparkles size={17} /><span>기록이 쌓이면<br />패턴이 보여요.</span></div>
-          <div className="sidebar-profile"><span className="avatar">나</span><span><strong>나의 가계부</strong><small>이 브라우저에 저장</small></span><span className="profile-dot" /></div>
+          <div className="sidebar-profile"><span className="avatar">나</span><span><strong>개인 가계부</strong><small>브라우저에 저장</small></span></div>
         </div>
       </aside>
 

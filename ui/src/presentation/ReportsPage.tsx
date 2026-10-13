@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { buildReport, sampleReportTransactions } from '@/application/report'
 import { monthLabel, shiftMonth, won } from '@/domain/transaction'
 import type { Transaction } from '@/domain/transaction'
+import { CategoryIcon } from './CategoryIcon'
 
 type Props = {
   month: string
@@ -28,7 +29,7 @@ export function ReportsPage({ month, onMonthChange, transactions }: Props) {
   return (
     <section aria-labelledby="reports-title">
       <div className="page-heading">
-        <div><div className="eyebrow">REPORT</div><h1 id="reports-title">리포트</h1><p>월별 지출 흐름과 카테고리 변화를 리포트 목업으로 확인하세요.</p></div>
+        <div><h1 id="reports-title">리포트</h1><p>월별 소비 흐름과 지출 변화를 확인하세요.</p></div>
         <div className="month-switcher" aria-label="리포트 조회 월 선택">
           <Button variant="ghost" size="icon-sm" aria-label="이전 달" onClick={() => onMonthChange(shiftMonth(month, -1))}><ChevronLeft size={17} /></Button>
           <strong>{monthLabel(month)}</strong>
@@ -75,8 +76,8 @@ export function ReportsPage({ month, onMonthChange, transactions }: Props) {
           {report.summary.expensesByCategory.length ? <div className="report-category-list">
             {report.summary.expensesByCategory.map(({ category, amount }) => (
               <div className="report-category-row" key={category.id}>
-                <span className="category-symbol" style={{ background: `${category.color}20`, color: category.color }}>{category.icon}</span>
-                <div><strong>{category.name}</strong><Progress className="progress-track" value={Math.round(amount / report.summary.expenseTotal * 100)} indicatorStyle={{ background: category.color }} /></div>
+                <CategoryIcon categoryId={category.id} />
+                <div><strong>{category.name}</strong><Progress className="progress-track" value={Math.round(amount / report.summary.expenseTotal * 100)} /></div>
                 <span>{won(amount)}<small>{Math.round(amount / report.summary.expenseTotal * 100)}%</small></span>
               </div>
             ))}

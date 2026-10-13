@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowRight, Check, ClipboardPaste, Coffee, Send, Sparkles, TrendingDown, Utensils, WandSparkles } from 'lucide-react'
+import { ArrowRight, Check, ClipboardPaste, Coffee, Send, Sparkles, TrendingDown, Utensils } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -59,13 +59,13 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
-    <div className="page-heading"><div><div className="eyebrow">간편 입력</div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자나 짧은 문장으로 거래를 기록하세요.</p></div>
+    <div className="page-heading"><div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자나 짧은 문장으로 거래를 기록하세요.</p></div>
       <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 채팅으로 거래 채우기</Button></div>
     <div className="assistant-layout">
       <Card className="surface-card chat-panel">
         <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>초안을 확인하고 저장해 주세요</small></div><Badge variant="secondary" className="chat-online">목 체험</Badge></div>
         <div className="chat-messages" aria-live="polite">
-          {messages.length === 0 && <div className="chat-welcome"><span className="welcome-icon"><WandSparkles size={27} /></span><h2>어떤 거래를 기록할까요?</h2><p>문장을 보내면 수정 가능한 초안을 만들어요.<br />아래 예시로 먼저 체험해 보세요.</p>
+          {messages.length === 0 && <div className="chat-welcome"><h2>한 문장으로 기록하세요.</h2><p>거래를 적거나 궁금한 지출을 물어보세요.<br />저장하기 전에 내용을 수정할 수 있어요.</p>
             <div className="suggestions">{examples.map(({ icon: Icon, title, prompt }) => <Button key={prompt} variant="outline" onClick={() => void send(prompt)}><span className="suggestion-icon"><Icon size={19} /></span><span className="suggestion-copy"><small>{title}</small><strong>{prompt}</strong></span><ArrowRight size={16} /></Button>)}</div>
           </div>}
           {messages.map((message) => { const reply = message.reply; return <div key={message.id} className={`message ${message.role}`}>
@@ -94,9 +94,6 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
           <small>Enter로 보내기 · Shift+Enter로 줄바꿈<br />목 체험으로, 실제 AI에 연결되지 않습니다.</small>
         </div>
       </Card>
-      <aside className="assistant-side"><div className="assistant-side-card"><span className="side-sparkle">✦</span><div className="eyebrow">HOW IT WORKS</div><h2>가볍게 물어보세요</h2><p>자연스러운 문장으로 거래를 기록하거나 내역을 확인할 수 있어요.</p>
-        <div className="side-steps"><div><span>01</span><strong>말로 입력</strong><small>평소처럼 문장을 적어요</small></div><div><span>02</span><strong>초안 확인</strong><small>저장 전 내용을 살펴봐요</small></div><div><span>03</span><strong>직접 확정</strong><small>확인한 뒤에만 기록돼요</small></div></div></div>
-        <div className="assistant-note"><strong>로컬에서만 처리해요</strong><p>거래는 이 브라우저에 저장됩니다. AI 서비스나 외부 서버로 보내지 않습니다.</p></div></aside>
     </div>
   </section>
 }

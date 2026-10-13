@@ -20,7 +20,7 @@
 .weekly-bar { display: grid; grid-template-rows: 24px 1fr 22px; gap: 9px; min-width: 0; text-align: center; }
 .weekly-value { color: var(--muted-foreground); font-size: 13px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weekly-track { height: 100%; min-height: 150px; border-radius: 10px; background: var(--muted); display: flex; align-items: end; overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
-.weekly-track span { width: 100%; border-radius: 10px 10px 0 0; background: linear-gradient(180deg,#3c8765,var(--primary)); }
+.weekly-track span { width: 100%; border-radius: 10px 10px 0 0; background: var(--primary); }
 .weekly-bar strong { color: var(--muted-foreground); font-size: 13px; }
 .report-category-list { display: grid; gap: 19px; margin-top: 27px; }
 .report-category-row { display: grid; grid-template-columns: 39px minmax(0,1fr) auto; align-items: center; gap: 13px; }
