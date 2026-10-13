@@ -6,6 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --text-xs: 0.875rem;
+    --text-xs--line-height: 1.5;
+    --text-sm: 1rem;
+    --text-sm--line-height: 1.5;
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', 'Malgun Gothic', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
