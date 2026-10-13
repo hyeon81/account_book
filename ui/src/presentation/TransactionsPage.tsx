@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { filterTransactions } from '@/application/ledger'
 import { categories, categoryFor, dateLabel, monthLabel, shiftMonth, won } from '@/domain/transaction'
@@ -38,12 +40,12 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
         <div><div className="eyebrow">YOUR RECORDS</div><h1 id="transactions-title">거래 내역</h1><p>하나씩 쌓인 기록이 나의 소비를 알려줘요.</p></div>
         <Button className="heading-add" onClick={onAdd}><Plus size={16} /> 거래 추가</Button>
       </div>
-      <div className="surface-card transaction-panel">
+      <Card className="surface-card transaction-panel">
         <div className="transaction-toolbar">
           <div className="month-switcher compact" aria-label="거래 조회 월 선택">
-            <button aria-label="이전 달" onClick={() => changeMonth(shiftMonth(month, -1))}><ChevronLeft size={17} /></button>
+            <Button variant="ghost" size="icon-sm" aria-label="이전 달" onClick={() => changeMonth(shiftMonth(month, -1))}><ChevronLeft size={17} /></Button>
             <strong>{monthLabel(month)}</strong>
-            <button aria-label="다음 달" onClick={() => changeMonth(shiftMonth(month, 1))}><ChevronRight size={17} /></button>
+            <Button variant="ghost" size="icon-sm" aria-label="다음 달" onClick={() => changeMonth(shiftMonth(month, 1))}><ChevronRight size={17} /></Button>
           </div>
           <div className="filters"><SlidersHorizontal size={16} className="filter-icon" aria-hidden="true" />
             <Select value={type} onValueChange={(value) => setFilterType(value as TransactionType | 'all')}>
@@ -58,7 +60,7 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
             </Select>
           </div>
         </div>
-        <div className="transaction-list-heading"><strong>거래 목록</strong><span>{monthLabel(month)} · {filtered.length}건</span></div>
+        <div className="transaction-list-heading"><strong>거래 목록</strong><Badge variant="secondary">{monthLabel(month)} · {filtered.length}건</Badge></div>
         {filtered.length === 0 ? <div className="list-state"><Search size={27} /><strong>조건에 맞는 거래가 없습니다.</strong><p>거래를 추가하거나 다른 월·필터를 선택해 보세요.</p>
             <Button variant="outline" onClick={() => { setFilterType('all'); setCategoryId('all') }}>필터 해제</Button></div> : <>
             <div className="transaction-table-head"><span>거래 내역</span><span>날짜</span><span>금액</span><span className="sr-only">행동</span></div>
@@ -76,7 +78,7 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
             </div>
             {visible < filtered.length && <div className="load-more"><Button variant="outline" onClick={() => setVisible((count) => count + 5)}>더 보기</Button></div>}
           </>}
-      </div>
+      </Card>
       <AlertDialog open={target !== null} onOpenChange={(open) => { if (!open) { setTarget(null); setError('') } }}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>거래를 삭제할까요?</AlertDialogTitle>
           <AlertDialogDescription>{target && `${dateLabel(target.date)} · ${target.merchant || categoryFor(target.categoryId)?.name} · ${won(target.amount)}`} 기록이 삭제됩니다. 이 작업은 되돌릴 수 없어요.</AlertDialogDescription>
