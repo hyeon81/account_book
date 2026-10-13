@@ -33,10 +33,6 @@ services:
         target: /workspace/docs
         read_only: true
       - type: bind
-        source: ./ui_docs
-        target: /workspace/ui_docs
-        read_only: true
-      - type: bind
         source: ./scripts
         target: /workspace/scripts
         read_only: true

@@ -36,24 +36,24 @@ account_book/
 │   └── run_mock_ui.sh
 ├── tests/
 │   └── scripts/test_validate_docs.py
-├── docs/
-│   ├── ai/
-│   │   ├── README.md
-│   │   ├── requirements.md
-│   │   ├── agent-architecture.md
-│   │   ├── category-rag.md
-│   │   ├── chat-statistics.md
-│   │   └── rule-statistics.md
-│   ├── agent-account-book-design.md
-│   ├── development-rules.md
-│   ├── python-conventions.md
-│   └── api-contract.md
-└── ui_docs/
-    ├── ui-design.md
-    ├── dashboard.md
-    ├── transactions.md
-    ├── assistant.md
-    └── mock-ui-development.md
+└── docs/
+    ├── ai/
+    │   ├── README.md
+    │   ├── requirements.md
+    │   ├── agent-architecture.md
+    │   ├── category-rag.md
+    │   ├── chat-statistics.md
+    │   └── rule-statistics.md
+    ├── ui_docs/
+    │   ├── ui-design.md
+    │   ├── dashboard.md
+    │   ├── transactions.md
+    │   ├── assistant.md
+    │   └── mock-ui-development.md
+    ├── agent-account-book-design.md
+    ├── development-rules.md
+    ├── python-conventions.md
+    └── api-contract.md
 ```
 
 ## 설계 문서
@@ -66,11 +66,11 @@ account_book/
 
 [Python 개발 규칙](docs/python-conventions.md)에는 패키지와 import, 타입, 예외, 로깅, 테스트 방식을 정리했습니다. [API 계약](docs/api-contract.md)에는 경로별 입력·출력과 오류 응답 규칙을 정리했습니다.
 
-[UI 공통 설계](ui_docs/ui-design.md)에서 페이지별 문서로 이동할 수 있습니다. [대시보드](ui_docs/dashboard.md), [거래 목록·입력](ui_docs/transactions.md), [AI 도우미](ui_docs/assistant.md)에 각 화면의 구조·동작·완료 기준을 정리했습니다.
+[UI 공통 설계](docs/ui_docs/ui-design.md)에서 페이지별 문서로 이동할 수 있습니다. [대시보드](docs/ui_docs/dashboard.md), [거래 목록·입력](docs/ui_docs/transactions.md), [AI 도우미](docs/ui_docs/assistant.md)에 각 화면의 구조·동작·완료 기준을 정리했습니다.
 
 ## 문서 검증
 
-문서를 변경한 뒤 아래 명령으로 `docs`와 `ui_docs`의 하위 폴더까지 로컬 링크와 제목 앵커, 코드 블록, JSON 예시, 설계와 API 계약의 경로 일치를 확인합니다. Python 표준 라이브러리만 사용하며 `.env` 파일이나 외부 URL은 읽지 않습니다.
+문서를 변경한 뒤 아래 명령으로 `docs`의 하위 폴더까지 로컬 링크와 제목 앵커, 코드 블록, JSON 예시, 설계와 API 계약의 경로 일치를 확인합니다. Python 표준 라이브러리만 사용하며 `.env` 파일이나 외부 URL은 읽지 않습니다.
 
 ```bash
 python scripts/validate_docs.py
@@ -94,7 +94,7 @@ docker compose run --rm scripts python scripts/validate_docs.py
 
 GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사용합니다. 개발 이미지에는 Python, `pytest`, Git, SSH 클라이언트가 들어 있으며, 작업 공간을 일반 사용자 `vscode`로 엽니다. 컨테이너 생성 후 Git 실행, 테스트, 문서 검증을 확인합니다. GitHub 인증은 Codespaces가 제공하는 방법을 사용하고 키를 이미지에 복사하지 않습니다.
 
-서버 없는 [가계부 UI](ui/README.md)는 React·TypeScript·Vite와 shadcn/ui로 만들었습니다. 개발 컨테이너는 Node.js 24와 npm을 준비하고 UI 의존성 설치·테스트·빌드를 확인하며 `5173` 포트를 전달합니다. 컨테이너 터미널에서 `bash scripts/run_mock_ui.sh`를 실행하면 Codespaces 접속 주소를 Vite에 맞게 설정합니다. 거래는 브라우저 `localStorage`에 저장됩니다. 입력 도우미는 외부 AI 호출이 없는 각본형 대역입니다. 자세한 실행 방법과 범위는 [UI 개발 환경](ui_docs/mock-ui-development.md)에 있습니다.
+서버 없는 [가계부 UI](ui/README.md)는 React·TypeScript·Vite와 shadcn/ui로 만들었습니다. 개발 컨테이너는 Node.js 24와 npm을 준비하고 UI 의존성 설치·테스트·빌드를 확인하며 `5173` 포트를 전달합니다. 컨테이너 터미널에서 `bash scripts/run_mock_ui.sh`를 실행하면 Codespaces 접속 주소를 Vite에 맞게 설정합니다. 거래는 브라우저 `localStorage`에 저장됩니다. 입력 도우미는 외부 AI 호출이 없는 각본형 대역입니다. 자세한 실행 방법과 범위는 [UI 개발 환경](docs/ui_docs/mock-ui-development.md)에 있습니다.
 
 ## 개발 및 실행 계획
 

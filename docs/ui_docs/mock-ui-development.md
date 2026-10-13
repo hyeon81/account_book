@@ -1,6 +1,6 @@
 # 서버 없는 가계부 UI 개발 환경
 
-이 문서는 브라우저 저장소로 동작하는 UI의 개발 컨테이너 실행 경로와 데이터 경계를 정한다. 화면별 구성은 [UI 공통 설계](ui-design.md), 실제 UI 명령은 [UI README](../ui/README.md)에서 확인할 수 있다.
+이 문서는 브라우저 저장소로 동작하는 UI의 개발 컨테이너 실행 경로와 데이터 경계를 정한다. 화면별 구성은 [UI 공통 설계](ui-design.md), 실제 UI 명령은 [UI README](../../ui/README.md)에서 확인할 수 있다.
 
 ## 개발 컨테이너
 
@@ -20,7 +20,7 @@ bash scripts/run_mock_ui.sh
 
 - 거래는 빈 상태에서 시작해 브라우저 `localStorage`에 저장한다. 직접 입력·수정·삭제와 도우미 초안 확정은 같은 저장소를 사용하고 대시보드·거래 목록에 즉시 반영된다. 새로고침 후에도 남지만 브라우저 데이터 삭제·다른 기기에는 유지되지 않는다.
 - 저장소 접근은 `ui/src/infrastructure/localLedger.ts`에 둔다. 추후 API 연결 시 이 경계를 교체한다. 현재 `/api` 요청은 보내지 않는다.
-- 입력 도우미는 `ui/src/infrastructure/scriptedAssistant.ts`의 정해진 규칙으로 응답한다. 저장된 거래로 합계를 계산하며 OpenAI나 외부 AI를 호출하지 않는다. 실제 AI 계약과 초안 만료·충돌은 [API 계약](../docs/api-contract.md)에 따라 이후 구현한다.
+- 입력 도우미는 `ui/src/infrastructure/scriptedAssistant.ts`의 정해진 규칙으로 응답한다. 저장된 거래로 합계를 계산하며 OpenAI나 외부 AI를 호출하지 않는다. 실제 AI 계약과 초안 만료·충돌은 [API 계약](../api-contract.md)에 따라 이후 구현한다.
 - API 서버, DB, OpenAI 키, 서비스 토큰은 필요하지 않다. 저장 공간이 막히거나 데이터가 손상되면 오류를 표시하고 저장 성공으로 알리지 않는다.
 - React, Vite, shadcn/ui 컴포넌트와 필요한 npm 패키지는 `ui/package-lock.json`으로 고정한다. UI 구현은 로컬 컴포넌트 파일을 사용한다.
 

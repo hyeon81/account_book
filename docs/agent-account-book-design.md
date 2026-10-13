@@ -73,7 +73,7 @@ Nginx를 선택한 이유는 빌드된 React 정적 파일을 제공하면서 �
 
 등록 결과와 답변에는 실제 저장 여부, 적용 기간과 필터를 보여준다. 조회할 기록이 없으면 기록이 없다고 안내한다. 불완전한 입력을 임의의 거래로 저장하지 않는다.
 
-각 화면의 구성과 상태별 동작은 [UI 공통 설계](../ui_docs/ui-design.md)에서 연결한 페이지별 문서에 정리한다.
+각 화면의 구성과 상태별 동작은 [UI 공통 설계](ui_docs/ui-design.md)에서 연결한 페이지별 문서에 정리한다.
 
 ## 초기 기능 범위
 
@@ -345,17 +345,17 @@ account_book/
 │   ├── Dockerfile
 │   ├── src/
 │   └── tests/
-├── docs/
-│   ├── agent-account-book-design.md
-│   ├── development-rules.md
-│   ├── python-conventions.md
-│   └── api-contract.md
-└── ui_docs/
-    ├── ui-design.md
-    ├── dashboard.md
-    ├── transactions.md
-    ├── assistant.md
-    └── mock-ui-development.md
+└── docs/
+    ├── agent-account-book-design.md
+    ├── development-rules.md
+    ├── python-conventions.md
+    ├── api-contract.md
+    └── ui_docs/
+        ├── ui-design.md
+        ├── dashboard.md
+        ├── transactions.md
+        ├── assistant.md
+        └── mock-ui-development.md
 ```
 
 현재는 문서, 검증 스크립트, Compose 검증 서비스와 브라우저 저장소로 동작하는 `ui/` 가계부가 작성되어 있다. 입력 도우미는 각본형 대역이며 API 서버·에이전트·DB 서비스는 구현 예정 구조다.

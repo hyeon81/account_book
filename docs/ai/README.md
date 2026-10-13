@@ -14,7 +14,7 @@
 
 ## 현재 구현과 설계의 관계
 
-현재 [UI 개발 환경](../../ui_docs/mock-ui-development.md)의 거래 저장은 브라우저 `localStorage`를 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 키워드로 카테고리를 고르고 월별 합계를 설명하는 대역이다. 임베딩, 검색 색인, 실제 LLM 호출, 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
+현재 [UI 개발 환경](../ui_docs/mock-ui-development.md)의 거래 저장은 브라우저 `localStorage`를 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 키워드로 카테고리를 고르고 월별 합계를 설명하는 대역이다. 임베딩, 검색 색인, 실제 LLM 호출, 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
 
 [전체 서비스 설계](../agent-account-book-design.md)의 `ui → server → agent` 구조와 LiteLLM 기반 모델 호출 계획을 따른다. 이 문서들의 내부 도구와 JSON은 후속 구현 제안이다. 현재 [API 계약](../api-contract.md)의 확정된 문서 범위와 섞지 않으며, 구현 시 계약과 테스트를 함께 갱신한다.
 
