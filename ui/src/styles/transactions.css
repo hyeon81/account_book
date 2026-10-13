@@ -41,5 +41,14 @@
 .field-error,.form-error { color: #bf544b; font-size: 11px; }
 .form-error { background: #fff1ef; border: 1px solid #f4d9d5; padding: 10px; border-radius: 7px; }
 .form-actions { margin-top: 8px; }
+.card-message-input { border: 1px solid #dce8dd; border-radius: 10px; background: #f7faf6; }
+.card-message-input summary { display: flex; align-items: center; gap: 8px; padding: 12px 14px; cursor: pointer; color: #485c4b; font-size: 12px; font-weight: 700; }
+.card-message-input summary span { margin-left: auto; font-size: 10px; color: #708973; }
+.card-message-body { display: grid; gap: 9px; padding: 0 14px 14px; }
+.card-message-body p { margin: 0; color: #708073; font-size: 12px; line-height: 1.6; }
+.card-message-body label { color: #485c4b; font-size: 12px; }
+.card-message-body textarea { font-size: 12px; line-height: 1.6; resize: vertical; }
+.card-message-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.card-message-notice { color: #527b57; font-size: 11px; line-height: 1.6; }
 @media (max-width: 900px) { .transaction-toolbar { flex-direction: column; align-items: stretch; } .filters { justify-content: end; } .transaction-table-head { display: none; } .transaction-row { grid-template-columns: 40px minmax(120px,1fr) 100px; row-gap: 2px; } .transaction-date { grid-column: 2; grid-row: 2; } .transaction-amount { grid-column: 3; grid-row: 1; } .row-actions { grid-column: 3; grid-row: 2; opacity: 1; } }
 @media (max-width: 540px) { .heading-add { align-self: start; } .transaction-toolbar { padding: 18px; } .filters { justify-content: stretch; } .filter-icon { display: none; } .filter-select { flex: 1; min-width: 0; } .transaction-list-heading { padding: 21px 18px 13px; } .transaction-row { padding: 12px 14px; grid-template-columns: 37px minmax(100px,1fr) 95px; column-gap: 8px; } .transaction-amount { font-size: 11px; } .transaction-form { grid-template-columns: 1fr; } .form-field:nth-of-type(5),.form-field:nth-of-type(6),.form-actions,.form-error { grid-column: auto; } }

@@ -10,7 +10,7 @@ import { AssistantPage } from './AssistantPage'
 import { TransactionForm } from './TransactionForm'
 
 type Page = 'dashboard' | 'transactions' | 'assistant'
-type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void }
+type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void; cardMessage?: boolean }
 
 function initialLedger(): { items: Transaction[]; error: string } {
   try { return { items: localLedger.load(), error: '' } }
@@ -91,11 +91,12 @@ export function AppShell() {
             onAdd={() => setForm({ mode: 'create' })} onEdit={edit} onDelete={remove} /></div>
           <div hidden={page !== 'assistant'}><AssistantPage month={month} transactions={ledger.items}
             onConfirmDraft={confirmDraft} onEditDraft={(draft, afterSave) => setForm({ mode: 'draft', initial: draft, afterSave })}
+            onCardMessage={() => setForm({ mode: 'create', cardMessage: true })}
             onTransactions={() => setPage('transactions')} /></div>
         </main>
       </div>
       <TransactionForm key={`${form?.mode}-${form?.id ?? 'new'}-${form ? 'open' : 'closed'}`}
-        open={form !== null} mode={form?.mode ?? 'create'} initial={form?.initial}
+        open={form !== null} mode={form?.mode ?? 'create'} initial={form?.initial} cardMessage={form?.cardMessage}
         onOpenChange={(open) => { if (!open) setForm(null) }} onSave={save} />
     </div>
   )

@@ -43,7 +43,8 @@ account_book/
     │   ├── agent-architecture.md
     │   ├── category-rag.md
     │   ├── chat-statistics.md
-    │   └── rule-statistics.md
+    │   ├── rule-statistics.md
+    │   └── card-message-preview.md
     ├── ui_docs/
     │   ├── ui-design.md
     │   ├── dashboard.md

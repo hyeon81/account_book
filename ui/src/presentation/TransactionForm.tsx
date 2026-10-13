@@ -9,28 +9,38 @@ import { validateTransaction } from '@/application/ledger'
 import type { InputErrors } from '@/application/ledger'
 import { categories, seoulToday } from '@/domain/transaction'
 import type { TransactionInput, TransactionType } from '@/domain/transaction'
+import { CardMessageInput } from './CardMessageInput'
 
 type Props = {
   open: boolean
   mode: 'create' | 'edit' | 'draft'
   initial?: TransactionInput
+  cardMessage?: boolean
   onOpenChange: (open: boolean) => void
   onSave: (input: TransactionInput) => void
 }
 
 const emptyInput = (): TransactionInput => ({ date: seoulToday(), type: 'expense', amount: 0, categoryId: '', merchant: '', memo: '' })
 
-export function TransactionForm({ open, mode, initial, onOpenChange, onSave }: Props) {
+export function TransactionForm({ open, mode, initial, cardMessage = false, onOpenChange, onSave }: Props) {
   const [input, setInput] = useState<TransactionInput>(initial ?? emptyInput)
   const [amountText, setAmountText] = useState(initial ? String(initial.amount) : '')
   const [errors, setErrors] = useState<InputErrors>({})
   const [generalError, setGeneralError] = useState('')
+  const [cardBlocked, setCardBlocked] = useState(false)
+  const applyCardDraft = (draft: TransactionInput) => {
+    setInput(draft)
+    setAmountText(String(draft.amount))
+    setErrors({})
+    setGeneralError('')
+  }
   const update = <K extends keyof TransactionInput>(key: K, value: TransactionInput[K]) => {
     setInput((current) => ({ ...current, [key]: value }))
     setErrors((current) => ({ ...current, [key]: undefined }))
   }
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
+    if (cardBlocked) return
     const next = { ...input, amount: Number(amountText) }
     const validation = validateTransaction(next)
     setErrors(validation)
@@ -42,6 +52,7 @@ export function TransactionForm({ open, mode, initial, onOpenChange, onSave }: P
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="form-dialog"><DialogHeader><DialogTitle>{mode === 'edit' ? '거래 수정' : mode === 'draft' ? '초안 수정 후 저장' : '거래 추가'}</DialogTitle>
       <DialogDescription>거래 정보를 입력해 주세요. 금액은 원화로 기록됩니다.</DialogDescription></DialogHeader>
+      {mode === 'create' && <CardMessageInput initiallyOpen={cardMessage} onDraft={applyCardDraft} onBlockedChange={setCardBlocked} />}
       <form onSubmit={submit} className="transaction-form" noValidate>
         {generalError && <p className="form-error" role="alert">{generalError}</p>}
         <div className="form-field"><Label htmlFor="transaction-date">거래일 <span className="required">*</span></Label>
@@ -67,7 +78,7 @@ export function TransactionForm({ open, mode, initial, onOpenChange, onSave }: P
         <div className="form-field"><Label htmlFor="transaction-memo">메모 <span className="optional">선택</span></Label>
           <Textarea id="transaction-memo" placeholder="기억해 둘 내용을 남겨 보세요" rows={3} value={input.memo} onChange={(event) => update('memo', event.target.value)} /></div>
         <DialogFooter className="form-actions"><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
-          <Button type="submit">{mode === 'edit' ? '변경 저장' : '거래 저장'}</Button></DialogFooter>
+          <Button type="submit" disabled={cardBlocked}>{mode === 'edit' ? '변경 저장' : '거래 저장'}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>

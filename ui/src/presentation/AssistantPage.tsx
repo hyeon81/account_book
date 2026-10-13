@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowRight, Check, Send, Sparkles, WandSparkles } from 'lucide-react'
+import { ArrowRight, Check, ClipboardPaste, Send, Sparkles, WandSparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryFor, dateLabel, won } from '@/domain/transaction'
@@ -14,6 +14,7 @@ type Props = {
   onConfirmDraft: (draft: TransactionInput) => void
   onEditDraft: (draft: TransactionInput, onSaved: () => void) => void
   onTransactions: () => void
+  onCardMessage: () => void
 }
 
 const examples = [
@@ -22,7 +23,7 @@ const examples = [
   { icon: '↗', title: '다른 달 조회', prompt: '지난달 지출 얼마야?' },
 ]
 
-export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft, onTransactions }: Props) {
+export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft, onTransactions, onCardMessage }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
   const [pendingQuestion, setPendingQuestion] = useState('')
@@ -56,7 +57,8 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
-    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>정해진 규칙으로 문장을 처리하는 체험 기능입니다. AI 연결은 이후에 추가됩니다.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">SCRIPTED PREVIEW</div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자를 붙여넣거나 문장으로 거래를 입력해 보세요. 저장 전 직접 수정할 수 있어요.</p></div>
+      <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 카드 문자 붙여넣기</Button></div>
     <div className="assistant-layout">
       <div className="surface-card chat-panel">
         <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>각본형 응답 · 저장 전 확인 필요</small></div><span className="chat-online"><span /> 준비됨</span></div>
@@ -85,7 +87,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
           {error && <div className="chat-error" role="alert">{error}<button onClick={onTransactions}>거래 목록 열기</button></div>}
           <form onSubmit={(event) => { event.preventDefault(); void send() }}><label className="sr-only" htmlFor="chat-input">가계부 도우미에게 질문</label>
             <Textarea id="chat-input" placeholder="예: 오늘 점심에 12,000원 썼어" rows={2} value={text} onChange={(event) => setText(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send() } }} />
+              onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
             <Button type="submit" disabled={!text.trim() || loading} aria-label="메시지 보내기"><Send size={17} /></Button></form>
           <small>저장된 거래를 기준으로 각본형 응답을 만듭니다. 실제 AI나 서버와 연결되지 않습니다.</small>
         </div>
