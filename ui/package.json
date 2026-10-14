@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint src tests vite.config.ts",
-    "test": "node --experimental-strip-types --test tests/application/ledger.test.ts tests/application/report.test.ts tests/infrastructure/localLedger.test.ts tests/infrastructure/scriptedAssistant.test.ts tests/infrastructure/cardMessage.test.ts tests/application/categoryRecommendation.test.ts tests/infrastructure/categoryRecommendation.test.ts",
+    "test": "node --experimental-strip-types --test tests/application/ledger.test.ts tests/application/report.test.ts tests/infrastructure/localLedger.test.ts tests/infrastructure/scriptedAssistant.test.ts tests/infrastructure/cardMessage.test.ts tests/application/categoryRecommendation.test.ts tests/infrastructure/categoryRecommendation.test.ts tests/application/transactionDraft.test.ts tests/infrastructure/transactionDraft.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

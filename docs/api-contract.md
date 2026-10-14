@@ -24,10 +24,16 @@
 | `GET /api/summary?month=YYYY-MM` | 조회할 월 | `200` 수입·지출·차액·카테고리 합계 | `422` 잘못된 월 |
 | `POST /api/chat` | `message` | `200` 답변, 거래 초안 또는 추가 질문 | `422` 빈 입력, `503` AI 서비스 장애 |
 | `POST /api/drafts/{id}/confirm` | `changes`와 `Idempotency-Key` 헤더 | `200` 확정 상태와 거래 ID | `404` 없는 초안, `410` 만료, `422` 잘못된 변경 |
+| `POST /api/transaction-draft` | 문장, 기준 날짜, Asia/Seoul, 확정 거래의 최소 분류 내역 | `200` 저장 전 초안과 RAG 추천 또는 추가 질문 | `400` 잘못된 입력, `503` AI 사용 불가 |
+| `POST /api/category-recommendation` | 유형, 사용처, 메모, 같은 유형의 확정 거래 분류 내역 | `200` 추천 카테고리와 근거 또는 수동 선택 안내 | `400` 잘못된 입력, `503` AI 사용 불가 |
 
 거래 목록의 응답은 `{ "items": [...], "next_cursor": null }` 형식을 사용한다. `limit`의 기본값과 최대값은 구현 시 정하되 무제한 조회는 허용하지 않는다. 월별 합계에는 확정된 거래만 포함한다.
 
 `POST /api/chat`의 `kind`는 `transaction_draft`, `answer`, `clarification` 중 하나다. 초안에는 `draft`와 사용자에게 보여줄 `reply`, 조회 답변에는 서버 집계값을 담은 `summary`와 `reply`, 추가 질문에는 `reply`를 담는다. 추가 질문의 답은 UI가 원래 문장과 합쳐 완성된 `message`로 다시 보낸다. 초기 버전은 서버에 대화 이력을 저장하거나 대화 ID를 관리하지 않는다. 모델이 계산한 금액으로 서버의 집계값을 덮어쓰지 않는다.
+
+`POST /api/transaction-draft`는 거래 추가 폼의 채우기 경로다. 서버는 먼저 거래 추출 AI로 날짜·유형·금액·사용처·메모를 만들고, 검증에 성공한 경우 같은 요청 안에서 RAG 카테고리 추천을 호출한다. 성공 응답은 `status`, `reason`, `draft`, `recommendation`, `requires_confirmation`을 포함한다. 추출이 모호하면 `needs_clarification`과 질문을 반환하고 RAG를 호출하지 않는다. API는 거래를 저장하지 않는다.
+
+`POST /api/category-recommendation`은 사용자가 카테고리 영역의 AI 추천 버튼을 누르거나 거래 채우기 후속 단계에서 사용한다. 성공 응답은 `status`, `category_id`, `reason`, `evidence_ids`, `evidence`, `requires_confirmation`을 포함한다. 추천 근거 ID는 `category:<id>` 또는 `transaction:<id>`다.
 
 초안 확인 요청의 `changes`는 빈 객체이거나 화면에서 바꾼 거래 필드만 포함한다. 서버는 확정 직전에 전체 거래를 다시 검증한다. 같은 초안에 동일한 확인 요청이 반복되면 새 거래를 만들지 않고 기존 `transaction_id`를 `200`으로 반환한다. 이미 확정된 초안에 서로 다른 변경을 요청하면 `409`를 반환한다. `Idempotency-Key`가 없으면 `422`를 반환한다.
 

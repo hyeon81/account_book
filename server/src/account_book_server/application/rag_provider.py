@@ -4,6 +4,10 @@ from typing import Protocol
 
 
 class RagProvider(Protocol):
+    def extract(self, message: str, reference_date: str) -> dict[str, object]:
+        """Return a structured transaction draft without deciding category."""
+        ...
+
     def embed(self, texts: list[str]) -> list[list[float]]:
         """Return one semantic vector for every supplied text."""
         ...

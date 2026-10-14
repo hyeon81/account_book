@@ -82,3 +82,42 @@ def test_full_rag_pipeline_over_http(endpoint):
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+
+def test_sequential_transaction_pipeline_over_http():
+    from account_book_server.application.category_rag import CategoryRag
+    from account_book_server.application.transaction_draft import TransactionDraft
+    from types import SimpleNamespace
+    calls = []
+    def extract(message, reference_date):
+        calls.append("extract")
+        return {"status": "extracted", "date": reference_date, "type": "expense", "amount": 5000,
+                "merchant": "카페", "memo": "오후 3시 커피", "reason": "추출 완료"}
+    def embed(texts):
+        calls.append("embed")
+        return [[1, 0] if "카페" in text or "커피" in text else [0, 1] for text in texts]
+    def generate(query, evidence, categories):
+        calls.append("generate")
+        return {"status": "recommended", "category_id": "cafe", "reason": "카페 근거",
+                "evidence_ids": [row["id"] for row in evidence if row["category_id"] == "cafe"]}
+    provider = SimpleNamespace(extract=extract, embed=embed, generate=generate)
+    payload = {"message": "오늘 오후 3시에 카페에서 5천원 썼어", "reference_date": "2026-10-14",
+               "timezone": "Asia/Seoul", "history": []}
+    rag = CategoryRag(provider)
+    server = create_server(port=0, rag=rag, drafts=TransactionDraft(provider, rag))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        req = Request("http://127.0.0.1:" + str(server.server_port) + "/api/transaction-draft",
+                      data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+        with urlopen(req) as response:
+            result = json.load(response)
+        assert calls == ["extract", "embed", "generate"]
+        assert result["draft"]["categoryId"] == "cafe"
+        assert result["draft"]["amount"] == 5000
+        assert result["requires_confirmation"] is True
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()

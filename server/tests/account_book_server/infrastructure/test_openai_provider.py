@@ -67,3 +67,23 @@ def test_model_refusal_and_incomplete_response_rejected():
         provider = OpenAIProvider(api_key="test-only", transport=lambda *_a, **_kw: io.BytesIO(json.dumps(response).encode()))
         with pytest.raises(RuntimeError):
             provider.generate({}, [{"id": "category:cafe"}], [{"id": "cafe"}])
+
+
+
+def test_extraction_wire_contract_excludes_category_and_history():
+    calls = []
+    answer = {"status": "extracted", "date": "2026-10-14", "type": "expense", "amount": 5000,
+              "merchant": "카페", "memo": "오후 3시", "reason": "추출 완료"}
+    def transport(request, timeout):
+        calls.append(json.loads(request.data))
+        return io.BytesIO(json.dumps({"status": "completed", "output": [
+            {"type": "message", "content": [{"type": "output_text", "text": json.dumps(answer)}]},
+        ]}).encode())
+    provider = OpenAIProvider(api_key="test-only", transport=transport)
+    assert provider.extract("오늘 오후 3시에 카페에서 5천원 썼어", "2026-10-14") == answer
+    body = calls[0]
+    assert body["store"] is False
+    assert body["text"]["format"]["strict"] is True
+    assert "category" not in str(body["text"]["format"]["schema"])
+    assert set(json.loads(body["input"])) == {"message", "reference_date", "timezone"}
+    assert "신뢰할 수 없는" in body["instructions"]

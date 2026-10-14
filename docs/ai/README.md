@@ -1,6 +1,6 @@
 # 가계부 AI 에이전트 설계와 교육 실습
 
-가계부의 카테고리 추천, 채팅 통계, 규칙 기반 통계를 구현하기 위한 교육용 설계다. 거래 저장·권한·계산은 API 서버가 맡고, AI 에이전트는 검색과 도구를 통해 추천하거나 결과를 설명한다. 아래 기능은 설계안이며 아직 실행 가능한 AI 기능은 아니다.
+가계부의 카테고리 추천, 거래 채우기, 채팅 통계, 규칙 기반 통계를 정리한 설계 문서다. 거래 저장·권한·계산은 API 서버가 맡고, AI 에이전트는 검색과 도구를 통해 추천하거나 결과를 설명한다. 현재 실행 가능한 AI 기능은 거래 추가 폼의 채우기와 카테고리 추천이며, 채팅 통계와 규칙 기반 통계는 설계안이다.
 
 ## 문서 목록
 
@@ -8,14 +8,15 @@
 | --- | --- |
 | [요구사항 원문과 작업 계획](requirements.md) | 이미지 원문, 범위 해석, 작업 순서와 완료 기준 |
 | [공통 에이전트 구조](agent-architecture.md) | 서비스 경계, 도구 호출, 실행 제한과 검증 |
+| [거래 채우기 AI 파이프라인](transaction-draft.md) | 거래 추출 AI와 RAG 분류의 순차 호출 |
 | [RAG 카테고리 추천](category-rag.md) | 검색 자료 준비, 의미 검색, 근거를 사용한 분류와 평가 |
 | [채팅 통계 조회](chat-statistics.md) | 자연어 질문을 검증된 기간·필터·집계로 변환 |
 | [규칙 기반 통계](rule-statistics.md) | 상황에 맞는 통계 규칙 선택과 서버의 결정적 실행 |
-| [카드 문자 자동 입력 목 기능](card-message-preview.md) | AI 없이 문자 추출·분류·수정·저장을 체험하는 화면 |
+| [AI 거래 채우기 구현](card-message-preview.md) | 거래 추출 AI와 RAG 분류를 순서대로 호출하는 채우기 화면 |
 
 ## 현재 구현과 설계의 관계
 
-현재 [UI 개발 환경](../ui_docs/mock-ui-development.md)의 거래 저장은 브라우저 `localStorage`를 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 키워드로 카테고리를 고르고 월별 합계를 설명하는 대역이다. 임베딩, 검색 색인, 실제 LLM 호출, 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
+현재 거래 저장은 브라우저 `localStorage`를 사용한다. 거래 추가 폼의 **채우기**는 `/api/transaction-draft`를 통해 실제 OpenAI 호출을 사용하고, 카테고리 영역의 AI 추천은 `/api/category-recommendation`의 RAG 검색을 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 통계 채팅 화면에 남아 있는 각본형 대역이다. 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
 
 [전체 서비스 설계](../agent-account-book-design.md)의 `ui → server → agent` 구조와 LiteLLM 기반 모델 호출 계획을 따른다. 이 문서들의 내부 도구와 JSON은 후속 구현 제안이다. 현재 [API 계약](../api-contract.md)의 확정된 문서 범위와 섞지 않으며, 구현 시 계약과 테스트를 함께 갱신한다.
 

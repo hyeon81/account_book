@@ -134,7 +134,7 @@ LLM 호출이 실패해도 직접 입력과 일반 통계 조회는 사용할 �
 | `list_transactions` | 기간과 카테고리 조건으로 거래를 조회한다. 페이지 크기를 제한한다. |
 | `get_summary` | 서버가 계산한 기간별 수입, 지출, 차액과 카테고리별 합계를 반환한다. |
 
-사용자용 API는 `GET /api/categories`, `POST /api/chat`, `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/{id}`, `GET /api/summary`, `POST /api/drafts/{id}/confirm`을 제안한다. 내부 도구 API는 `/internal/tools/...` 아래에 별도로 둔다. 초기 로컬 사용자용 경로에는 로그인을 넣지 않고 내부 경로에는 서비스 토큰을 적용한다. 경로별 상태 코드와 오류 응답은 [API 계약](api-contract.md)에 정리한다.
+사용자용 API는 `GET /api/categories`, `POST /api/chat`, `GET/POST /api/transactions`, `PATCH/DELETE /api/transactions/{id}`, `GET /api/summary`, `POST /api/drafts/{id}/confirm`, `POST /api/transaction-draft`, `POST /api/category-recommendation`을 제안한다. 내부 도구 API는 `/internal/tools/...` 아래에 별도로 둔다. 초기 로컬 사용자용 경로에는 로그인을 넣지 않고 내부 경로에는 서비스 토큰을 적용한다. 경로별 상태 코드와 오류 응답은 [API 계약](api-contract.md)에 정리한다.
 
 ## 입력과 출력 예시
 
@@ -358,7 +358,7 @@ account_book/
         └── mock-ui-development.md
 ```
 
-현재는 문서, 검증 스크립트, Compose 검증 서비스와 브라우저 저장소로 동작하는 `ui/` 가계부가 작성되어 있다. 입력 도우미는 각본형 대역이며 API 서버·에이전트·DB 서비스는 구현 예정 구조다.
+현재는 문서, 검증 스크립트, Compose 검증 서비스, 브라우저 저장소로 동작하는 `ui/` 가계부, 거래 채우기와 RAG 카테고리 추천을 처리하는 로컬 API 서버가 작성되어 있다. 통계 채팅 도우미는 각본형 대역이며 별도 에이전트·DB 서비스는 구현 예정 구조다.
 
 ## 구현 순서와 완료 기준
 

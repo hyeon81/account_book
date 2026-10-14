@@ -30,7 +30,7 @@ class RecommendationHandler(BaseHTTPRequestHandler):
             self._reply(404, {"error": "경로를 찾을 수 없어요."})
 
     def do_POST(self) -> None:
-        if self.path != "/api/category-recommendation":
+        if self.path not in ("/api/category-recommendation", "/api/transaction-draft"):
             self._reply(404, {"error": "경로를 찾을 수 없어요."})
             return
         origin = self.headers.get("Origin")
@@ -54,7 +54,8 @@ class RecommendationHandler(BaseHTTPRequestHandler):
             self.connection.settimeout(10)
             raw = self.rfile.read(length)
             payload = json.loads(raw)
-            result = self.server.rag.recommend(payload)
+            result = (self.server.drafts.prepare(payload) if self.path == "/api/transaction-draft"
+                      else self.server.rag.recommend(payload))
             self._reply(200, result)
         except (ValueError, UnicodeDecodeError):
             self._reply(400, {"error": "사용처·메모와 거래 내역을 확인해 주세요."})
