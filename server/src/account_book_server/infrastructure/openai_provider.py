@@ -9,6 +9,9 @@ class OpenAIProvider:
     def __init__(self, api_key=None, embedding_model=None, model=None, transport=urlopen):
         self.api_key = api_key if api_key is not None else os.environ.get("OPENAI_API_KEY", "")
         self.embedding_model = embedding_model or os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+        self.embedding_dimensions = int(os.environ.get("OPENAI_EMBEDDING_DIMENSIONS", "1536"))
+        if not 1 <= self.embedding_dimensions <= 16000:
+            raise ValueError("Invalid embedding dimensions")
         self.model = model or os.environ.get("OPENAI_CATEGORY_MODEL", "gpt-4.1-mini")
         self.transaction_model = os.environ.get("OPENAI_TRANSACTION_MODEL", self.model)
         self.transport = transport
@@ -35,6 +38,7 @@ class OpenAIProvider:
     def embed(self, texts: list[str]) -> list[list[float]]:
         result = self._post("embeddings", {
             "model": self.embedding_model, "input": texts, "encoding_format": "float",
+            "dimensions": self.embedding_dimensions,
         })
         rows = result.get("data", [])
         if len(rows) != len(texts) or sorted(row.get("index", -1) for row in rows) != list(range(len(texts))):

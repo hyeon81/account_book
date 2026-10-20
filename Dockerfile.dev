@@ -7,6 +7,7 @@ RUN apt-get update \
 WORKDIR /workspace
 
 COPY requirements-dev.txt /tmp/requirements-dev.txt
+COPY server/requirements.txt /tmp/server/requirements.txt
 RUN python -m pip install --no-cache-dir -r /tmp/requirements-dev.txt
 
 RUN groupadd --gid 1000 vscode \

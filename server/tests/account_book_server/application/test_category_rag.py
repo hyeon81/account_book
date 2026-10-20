@@ -4,11 +4,11 @@ import math
 
 import pytest
 
-from account_book_server.application.category_rag import CategoryRag
+from rag_fakes import category_rag as CategoryRag, DATASET_ID
 
 
 def payload(**overrides):
-    value = {"type": "expense", "merchant": "커피", "memo": "", "history": []}
+    value = {"dataset_id": DATASET_ID, "type": "expense", "merchant": "커피", "memo": "", "history": []}
     value.update(overrides)
     return value
 
@@ -164,3 +164,30 @@ def test_provider_failure_does_not_expose_secret_details(stage):
 def test_malformed_client_requests_raise_validation_errors(invalid):
     with pytest.raises(ValueError):
         CategoryRag(Provider()).recommend(invalid)
+
+@pytest.mark.parametrize("dataset", [None, "", "other", "00000000-0000-0000-0000-000000000000", 1])
+def test_invalid_dataset_fails_before_external_calls(dataset):
+    provider = Provider()
+    with pytest.raises(ValueError):
+        CategoryRag(provider).recommend(payload(dataset_id=dataset))
+    assert not provider.calls and not provider.texts
+
+def test_store_failure_is_unavailable_without_generation():
+    from account_book_server.application.category_rag import CategoryRag as Service
+    class FailedStore:
+        def retrieve(self, *args):
+            raise RuntimeError("private DB password")
+    provider = Provider()
+    result = Service(provider, FailedStore()).recommend(payload())
+    assert result["status"] == "unavailable"
+    assert "password" not in str(result)
+    assert not provider.calls
+
+def test_stale_or_foreign_store_evidence_cannot_ground_recommendation():
+    from account_book_server.application.category_rag import CategoryRag as Service
+    class StaleStore:
+        def retrieve(self, *args):
+            return [{"id": "category:cafe", "category_id": "cafe", "source": "category", "text": "stale"}]
+    provider = Provider()
+    assert Service(provider, StaleStore()).recommend(payload())["status"] == "unavailable"
+    assert not provider.calls

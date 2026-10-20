@@ -1,6 +1,10 @@
 name: account-book-dev
 
 services:
+  db:
+    extends:
+      file: compose.yaml
+      service: db
   api:
     extends:
       file: compose.yaml
@@ -37,3 +41,6 @@ services:
       file: compose.yaml
       service: scripts
     profiles: ["checks"]
+
+volumes:
+  rag-data:

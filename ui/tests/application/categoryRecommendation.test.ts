@@ -4,9 +4,11 @@ import { createRecommendationGate, recommendationRequest, validateRecommendation
 import type { RecommendationResult } from '../../src/application/categoryRecommendation.ts'
 import type { Transaction, TransactionInput } from '../../src/domain/transaction.ts'
 
+const datasetId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+
 const input: TransactionInput = { date: '2026-10-13', type: 'expense', amount: 5000, categoryId: '', merchant: ' 달빛커피 ', memo: ' 라떼 ' }
 const transaction = (id: string, overrides: Partial<Transaction> = {}): Transaction => ({ ...input, id, categoryId: 'cafe', ...overrides })
-const request = recommendationRequest(input, [transaction('coffee')])
+const request = recommendationRequest(datasetId, input, [transaction('coffee')])
 const result: RecommendationResult = {
   status: 'recommended', category_id: 'cafe', reason: '저장된 같은 사용처의 카페 분류를 참고했어요.',
   evidence_ids: ['transaction:coffee'], requires_confirmation: true,
@@ -17,7 +19,7 @@ test('request contains only minimal confirmed same-type history and newest 100',
   const history = Array.from({ length: 110 }, (_, index) => transaction(`item-${index}`, { date: index < 10 ? '2026-09-01' : '2026-10-13' }))
   history.push(transaction('income', { type: 'income', categoryId: 'salary' }))
   history.push(transaction('invalid', { categoryId: 'deleted-category' }))
-  const payload = recommendationRequest(input, history)
+  const payload = recommendationRequest(datasetId, input, history)
   assert.equal(payload.history.length, 100)
   assert.equal(payload.merchant, '달빛커피')
   assert.equal(payload.memo, '라떼')
@@ -30,14 +32,14 @@ test('request contains only minimal confirmed same-type history and newest 100',
 
 test('editing excludes its original record instead of retrieving the record being corrected', () => {
   const editing = transaction('editing')
-  assert.deepEqual(recommendationRequest(input, [editing, transaction('other')], editing).history.map((item) => item.id), ['other'])
+  assert.deepEqual(recommendationRequest(datasetId, input, [editing, transaction('other')], editing).history.map((item) => item.id), ['other'])
   const { id: _id, ...withoutId } = editing
-  assert.equal(recommendationRequest(input, [editing], withoutId).history.length, 0)
+  assert.equal(recommendationRequest(datasetId, input, [editing], withoutId).history.length, 0)
 })
 
 test('deleted history never appears in the next request', () => {
-  assert.equal(recommendationRequest(input, []).history.length, 0)
-  assert.throws(() => validateRecommendation(result, recommendationRequest(input, [])))
+  assert.equal(recommendationRequest(datasetId, input, []).history.length, 0)
+  assert.throws(() => validateRecommendation(result, recommendationRequest(datasetId, input, [])))
 })
 
 test('recommendation accepts known same-type category with verified retrieved evidence', () => {
@@ -88,15 +90,15 @@ test('manual changes and newer requests abort and invalidate stale recommendatio
 })
 
 test('oversized query fields are rejected before transmitting any history', () => {
-  assert.throws(() => recommendationRequest({ ...input, merchant: 'a'.repeat(501) }, []), /500자/)
-  assert.throws(() => recommendationRequest({ ...input, memo: 'a'.repeat(1001) }, []), /1,000자/)
-  assert.equal(recommendationRequest({ ...input, merchant: 'a'.repeat(500), memo: 'b'.repeat(1000) }, []).merchant.length, 500)
+  assert.throws(() => recommendationRequest(datasetId, { ...input, merchant: 'a'.repeat(501) }, []), /500자/)
+  assert.throws(() => recommendationRequest(datasetId, { ...input, memo: 'a'.repeat(1001) }, []), /1,000자/)
+  assert.equal(recommendationRequest(datasetId, { ...input, merchant: 'a'.repeat(500), memo: 'b'.repeat(1000) }, []).merchant.length, 500)
 })
 
 test('in-flight same-ID corrections to merchant or memo invalidate retrieved evidence', () => {
-  const original = recommendationRequest(input, [transaction('coffee')])
+  const original = recommendationRequest(datasetId, input, [transaction('coffee')])
   for (const correction of [{ merchant: '새 사용처' }, { memo: '바뀐 메모' }]) {
-    const current = recommendationRequest(input, [transaction('coffee', correction)])
+    const current = recommendationRequest(datasetId, input, [transaction('coffee', correction)])
     assert.throws(() => validateRecommendation(result, current, original), /근거/)
   }
   assert.equal(validateRecommendation(result, original, original).category_id, 'cafe')
@@ -106,11 +108,19 @@ test('serialized UTF-8 request drops oldest history below 190KB for Korean text'
   const history = Array.from({ length: 100 }, (_, index) => transaction(`item-${index}`, {
     date: index < 50 ? '2026-10-13' : '2026-10-12', merchant: '가'.repeat(500), memo: '나'.repeat(1000),
   }))
-  const payload = recommendationRequest(input, history)
+  const payload = recommendationRequest(datasetId, input, history)
   assert.ok(payload.history.length > 0 && payload.history.length < 100)
   assert.ok(new TextEncoder().encode(JSON.stringify(payload)).byteLength < 190000)
   assert.equal(payload.history[0].id, 'item-0')
   assert.equal(payload.history.at(-1)?.id, `item-${payload.history.length - 1}`)
   assert.equal(payload.merchant, '달빛커피')
   assert.equal(payload.memo, '라떼')
+})
+
+test('dataset ID is mandatory and responses from a different dataset are rejected', () => {
+  assert.equal(request.dataset_id, datasetId)
+  assert.throws(() => recommendationRequest('', input, []), /자료 구분값/)
+  assert.throws(() => recommendationRequest('not-a-uuid', input, []), /자료 구분값/)
+  assert.throws(() => recommendationRequest('aaaaaaaa-aaaa-1aaa-8aaa-aaaaaaaaaaaa', input, []), /자료 구분값/)
+  assert.throws(() => validateRecommendation(result, { ...request, dataset_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }, request), /근거/)
 })

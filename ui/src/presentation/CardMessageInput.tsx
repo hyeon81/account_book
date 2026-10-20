@@ -1,3 +1,4 @@
+import { getBrowserDatasetId } from '@/infrastructure/browserDataset'
 import { useEffect, useRef, useState } from 'react'
 import { MessageSquare, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,10 +44,10 @@ export function CardMessageInput({ initiallyOpen, active, inputVersion, onDraft,
     const startInputVersion = latestInputVersion.current
     try {
       const fullMessage = context ? `${context} ${text}` : text
-      const request = transactionDraftRequest(fullMessage, localLedger.load(), today)
+      const request = transactionDraftRequest(getBrowserDatasetId(), fullMessage, localLedger.load(), today)
       const response = await requestTransactionDraft(request, pending.signal)
       if (!pending.isCurrent() || latestInputVersion.current !== startInputVersion) return
-      const result = validateTransactionDraft(response, request, transactionDraftRequest(fullMessage, localLedger.load(), today))
+      const result = validateTransactionDraft(response, request, transactionDraftRequest(getBrowserDatasetId(), fullMessage, localLedger.load(), today))
       if (result.status === 'draft' && result.draft) {
         onDraft(result.draft)
         const category = categoryFor(result.draft.categoryId)

@@ -1,3 +1,4 @@
+import { getBrowserDatasetId } from '@/infrastructure/browserDataset'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createRecommendationGate, recommendationRequest, validateRecommendation } from '@/application/categoryRecommendation'
 import type { RecommendationResult } from '@/application/categoryRecommendation'
@@ -22,10 +23,10 @@ export function useCategoryRecommendation(open: boolean, input: TransactionInput
     const pending = gate.current.start()
     setBusy(true); setResult(null); setNotice('')
     try {
-      const request = recommendationRequest(input, localLedger.load(), editing)
+      const request = recommendationRequest(getBrowserDatasetId(), input, localLedger.load(), editing)
       const recommendation = await requestCategoryRecommendation(request, pending.signal)
       if (!pending.isCurrent()) return
-      validateRecommendation(recommendation, recommendationRequest(input, localLedger.load(), editing), request)
+      validateRecommendation(recommendation, recommendationRequest(getBrowserDatasetId(), input, localLedger.load(), editing), request)
       setResult(recommendation)
       if (recommendation.status === 'recommended' && recommendation.category_id) select(recommendation.category_id)
     } catch (cause) {

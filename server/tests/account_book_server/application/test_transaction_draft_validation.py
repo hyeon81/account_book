@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 
 import pytest
+from rag_fakes import DATASET_ID
 
 from account_book_server.application.transaction_draft import TransactionDraft
 
@@ -16,7 +17,7 @@ def test_bad_extraction_does_not_call_rag(field, value):
     def forbidden(_query):
         pytest.fail("Invalid extraction must not reach retrieval")
     service = TransactionDraft(SimpleNamespace(extract=lambda *_args: answer), SimpleNamespace(recommend=forbidden))
-    result = service.prepare({"message": "카페 5천원", "reference_date": "2026-10-14", "timezone": "Asia/Seoul"})
+    result = service.prepare({"dataset_id": DATASET_ID, "message": "카페 5천원", "reference_date": "2026-10-14", "timezone": "Asia/Seoul"})
     assert result["status"] == "unavailable"
     assert result["draft"] is None
 
@@ -25,6 +26,6 @@ def test_extraction_provider_failure_preserves_no_private_details():
     def fail(*_args):
         raise RuntimeError("private provider data")
     service = TransactionDraft(SimpleNamespace(extract=fail), None)
-    result = service.prepare({"message": "카페 5천원", "reference_date": "2026-10-14", "timezone": "Asia/Seoul"})
+    result = service.prepare({"dataset_id": DATASET_ID, "message": "카페 5천원", "reference_date": "2026-10-14", "timezone": "Asia/Seoul"})
     assert result["status"] == "unavailable"
     assert "private" not in str(result)

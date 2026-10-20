@@ -16,7 +16,7 @@
 
 ## 현재 구현과 설계의 관계
 
-현재 거래 저장은 브라우저 `localStorage`를 사용한다. 거래 추가 폼의 **채우기**는 `/api/transaction-draft`를 통해 실제 OpenAI 호출을 사용하고, 카테고리 영역의 AI 추천은 `/api/category-recommendation`의 RAG 검색을 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 통계 채팅 화면에 남아 있는 각본형 대역이다. 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
+현재 거래 원본은 브라우저 `localStorage`에 저장한다. RAG 검색 자료와 임베딩은 PostgreSQL·pgvector에 영속 저장하며, 변경되지 않은 문서의 임베딩을 재사용한다. 거래 추가 폼의 **채우기**는 `/api/transaction-draft`를 통해 실제 OpenAI 호출을 사용하고, 카테고리 영역의 AI 추천은 `/api/category-recommendation`의 RAG 검색을 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 통계 채팅 화면에 남아 있는 각본형 대역이다. 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
 
 [전체 서비스 설계](../agent-account-book-design.md)의 `ui → server → agent` 구조와 LiteLLM 기반 모델 호출 계획을 따른다. 이 문서들의 내부 도구와 JSON은 후속 구현 제안이다. 현재 [API 계약](../api-contract.md)의 확정된 문서 범위와 섞지 않으며, 구현 시 계약과 테스트를 함께 갱신한다.
 
@@ -28,4 +28,4 @@
 4. 기존 LiteLLM 연동 계획에 따라 실제 모델 호출을 연결하고 스키마 지원을 확인한다.
 5. UI에 근거, 적용 기간, 규칙 버전과 확인 상태를 표시한다.
 
-이번 문서 작업은 패키지·모델 ID·벡터 DB 제품을 새로 확정하거나 설치하지 않는다. 후속 구현에서 새 의존성이 필요하면 프로젝트 규칙에 따라 먼저 합의한다. 실습은 합성 자료로 시작하고 실제 금융 기록은 최소 필요한 필드만 모델에 전달한다.
+현재 RAG 구현은 PostgreSQL·pgvector와 승인된 `psycopg[binary]`를 사용한다. 새 의존성이 필요한 후속 구현은 프로젝트 규칙에 따라 먼저 합의한다. 실습은 합성 자료로 시작하고 실제 금융 기록은 최소 필요한 필드만 모델에 전달한다.

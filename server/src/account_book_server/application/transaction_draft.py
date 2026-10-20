@@ -1,7 +1,7 @@
 """Extract a transaction, validate it, then classify it using grounded RAG."""
 from datetime import date
 
-from account_book_server.application.category_rag import CATEGORIES, _documents, _string
+from account_book_server.application.category_rag import CATEGORIES, _dataset_id, _documents, _string
 
 
 def _date(value):
@@ -29,6 +29,7 @@ class TransactionDraft:
     def prepare(self, payload):
         if not isinstance(payload, dict) or payload.get("timezone") != "Asia/Seoul":
             raise ValueError("Invalid timezone")
+        dataset_id = _dataset_id(payload)
         message = _string(payload.get("message"), "message", 4000, False)
         reference_date = _date(payload.get("reference_date"))
         history = payload.get("history", [])
@@ -54,7 +55,7 @@ class TransactionDraft:
                 draft["memo"] = message[:1000]
         except Exception:
             return _response("unavailable", "거래 정보를 추출하지 못했어요. 다시 시도하거나 직접 입력해 주세요.")
-        query = {"type": draft["type"], "merchant": draft["merchant"], "memo": draft["memo"],
+        query = {"dataset_id": dataset_id, "type": draft["type"], "merchant": draft["merchant"], "memo": draft["memo"],
                  "history": [record for record in history if record["type"] == draft["type"]]}
         recommendation = self.rag.recommend(query)
         if recommendation["status"] == "recommended":

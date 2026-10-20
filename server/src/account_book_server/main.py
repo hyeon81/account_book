@@ -6,6 +6,7 @@ from http.server import ThreadingHTTPServer
 from account_book_server.application.category_rag import CategoryRag
 from account_book_server.application.transaction_draft import TransactionDraft
 from account_book_server.infrastructure.openai_provider import OpenAIProvider
+from account_book_server.infrastructure.postgres_vector_store import PostgresVectorStore
 from account_book_server.presentation.recommendation_handler import RecommendationHandler
 
 
@@ -13,7 +14,7 @@ def create_server(host: str = "127.0.0.1", port: int = 8000, rag=None, drafts=No
     server = ThreadingHTTPServer((host, port), RecommendationHandler)
     server.daemon_threads = True
     provider = OpenAIProvider()
-    server.rag = rag if rag is not None else CategoryRag(provider)
+    server.rag = rag if rag is not None else CategoryRag(provider, PostgresVectorStore())
     server.drafts = drafts if drafts is not None else TransactionDraft(provider, server.rag)
     server.slots = threading.BoundedSemaphore(2)
     server.allowed_origins = {

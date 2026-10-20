@@ -1,6 +1,7 @@
 """Transaction draft extraction is followed by grounded category RAG."""
 
 import pytest
+from rag_fakes import DATASET_ID
 
 from account_book_server.application.transaction_draft import TransactionDraft
 
@@ -13,7 +14,7 @@ def history(identifier="coffee", **overrides):
 
 
 def payload(**overrides):
-    value = {"message": "오늘 오후 3시에 달빛커피에서 5천원 썼어",
+    value = {"dataset_id": DATASET_ID, "message": "오늘 오후 3시에 달빛커피에서 5천원 썼어",
              "reference_date": "2026-10-14", "timezone": "Asia/Seoul",
              "history": [history()]}
     value.update(overrides)
@@ -55,7 +56,7 @@ def test_extraction_runs_before_rag_and_category_comes_only_from_rag():
     rag = Rag()
     result = TransactionDraft(provider, rag).prepare(payload())
     assert provider.extractions == [("오늘 오후 3시에 달빛커피에서 5천원 썼어", "2026-10-14")]
-    assert rag.calls == [{"type": "expense", "merchant": "달빛커피",
+    assert rag.calls == [{"dataset_id": DATASET_ID, "type": "expense", "merchant": "달빛커피",
                           "memo": "오후 3시 라떼", "history": [history()]}]
     assert result["status"] == "draft"
     assert result["draft"] == {"date": "2026-10-14", "type": "expense", "amount": 5000,
@@ -101,6 +102,7 @@ def test_malformed_extraction_fails_closed(answer):
 
 
 @pytest.mark.parametrize("invalid", [
+    payload(dataset_id="invalid"),
     payload(timezone="UTC"),
     payload(reference_date="2026-02-30"),
     payload(message=""),

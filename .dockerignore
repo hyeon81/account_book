@@ -2,3 +2,5 @@
 *
 !Dockerfile.dev
 !requirements-dev.txt
+!server/
+!server/requirements.txt

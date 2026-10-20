@@ -2,13 +2,13 @@
 
 수입과 지출을 기록하고 관리하기 위한 가계부 프로젝트입니다.
 
-초기 구현은 로컬 단일 사용자용이며, AI 기능에는 OpenAI를 사용할 계획입니다.
+현재 구현은 로컬 단일 사용자용이며 AI 거래 추출·카테고리 추천에 OpenAI를 사용합니다.
 
 현재 저장소 버전은 [`0.2.0`](VERSION)입니다. 변경 사항은 [변경 이력](CHANGELOG.md), 릴리즈 절차는 [릴리즈 문서](docs/reales.md)를 참고하세요.
 
 ## 현재 상태
 
-브라우저에서 동작하는 가계부 UI가 있습니다. 거래 입력·조회·수정·삭제와 월별 집계는 브라우저 저장소를 사용하므로 새로고침 뒤에도 유지됩니다. Docker Compose로 UI를 실행하면 `http://localhost:8080`에서 접속할 수 있습니다. AI 채우기는 거래 추출 AI와 RAG 카테고리 분류를 순서대로 호출하고, AI 카테고리 추천은 로컬 API 서버의 RAG 검색과 OpenAI 생성으로 동작합니다. 별도 에이전트·DB는 아직 구현되지 않았습니다.
+브라우저에서 동작하는 가계부 UI가 있습니다. 거래 입력·조회·수정·삭제와 월별 집계는 브라우저 저장소를 사용하므로 새로고침 뒤에도 유지됩니다. Docker Compose로 UI를 실행하면 `http://localhost:8080`에서 접속할 수 있습니다. AI 채우기는 거래 추출 AI와 RAG 카테고리 분류를 순서대로 호출하고, AI 카테고리 추천은 로컬 API 서버의 RAG 검색과 OpenAI 생성으로 동작합니다. 검색 자료와 임베딩은 PostgreSQL·pgvector에 저장하고 변경되지 않은 자료의 임베딩을 재사용합니다. 거래 원본은 브라우저에 유지하며 별도 에이전트 서비스와 로그인은 후속 범위입니다.
 
 ## 프로젝트 구성
 
@@ -93,15 +93,17 @@ docker compose run --rm scripts python scripts/validate_docs.py
 
 백그라운드 실행은 `docker compose up -d --build`, 종료는 `docker compose down`을 사용합니다. UI는 기존 Node.js 의존성으로 빌드하고 Vite 미리보기 서버로 제공합니다. 8080 포트는 로컬 컴퓨터에서만 접근할 수 있습니다. UI 이미지에는 UI 소스·설정·테스트만 포함하며 실제 `.env` 파일은 넣지 않습니다.
 
-검증 컨테이너에는 README, 문서, 스크립트와 테스트만 읽기 전용으로 연결합니다. 실제 `.env` 파일과 API 키는 이미지에 넣지 않습니다. AI API 컨테이너에는 서버용 `OPENAI_API_KEY` 환경변수를 전달합니다. 로컬 Python 환경에서 테스트하려면 승인된 개발 의존성을 `python -m pip install -r requirements-dev.txt`로 설치한 뒤 `pytest`를 실행합니다.
+검증 컨테이너에는 README, 문서, 스크립트와 테스트만 읽기 전용으로 연결합니다. 실제 `.env` 파일과 API 키는 이미지에 넣지 않습니다. AI API 컨테이너에는 서버용 `OPENAI_API_KEY` 환경변수를 전달합니다. 로컬 Python 환경에서 테스트하려면 승인된 개발 의존성과 서버 패키지를 설치한 뒤 `pytest`를 실행합니다. 서버의 추가 의존성은 `psycopg[binary]`입니다.
+
+PostgreSQL은 두 Compose 구성에서 내부 서비스로 실행되고 영속 볼륨을 사용합니다. DB 상태 확인 후 `python -m account_book_server.migrate`로 버전 관리 SQL을 적용하고 API를 시작합니다. 마이그레이션은 반복 실행해도 기존 자료를 유지합니다. `DATABASE_URL`과 `POSTGRES_USER`·`POSTGRES_PASSWORD`·`POSTGRES_DB` 설정 예시는 `.env.example`에 있습니다. DB와 API 포트는 호스트에 공개하지 않습니다. 일반 종료는 볼륨을 유지하지만 볼륨 삭제 시 검색 자료와 임베딩이 사라집니다. 개발 구성과 기본 구성은 기본 프로젝트 이름이 다를 수 있어 볼륨도 분리됩니다. 같은 DB 자료를 사용하려면 두 명령 모두 동일한 `-p account-book-category-rag`를 지정하고, 5173·8080 브라우저 출처의 거래 저장소는 여전히 별개임을 유의하세요. 자세한 재사용·삭제 규칙과 실제 DB 통합 테스트 명령은 [RAG 구현 문서](docs/ai/category-rag-implementation.md)를 참고하세요.
 
 GitHub Codespaces에서는 저장소의 `.devcontainer/devcontainer.json`을 사용합니다. 개발 이미지에는 Python, `pytest`, Git, SSH 클라이언트가 들어 있으며, 작업 공간을 일반 사용자 `vscode`로 엽니다. 컨테이너 생성 후 Git 실행, 테스트, 문서 검증을 확인합니다. GitHub 인증은 Codespaces가 제공하는 방법을 사용하고 키를 이미지에 복사하지 않습니다.
 
-서버 없는 [가계부 UI](ui/README.md)는 React·TypeScript·Vite와 shadcn/ui로 만들었습니다. 개발 컨테이너는 Node.js 24와 npm을 준비하고 UI 의존성 설치·테스트·빌드를 확인하며 `5173` 포트를 전달합니다. 컨테이너 터미널에서 `bash scripts/run_mock_ui.sh`를 실행하면 Codespaces 접속 주소를 Vite에 맞게 설정합니다. 거래는 브라우저 `localStorage`에 저장됩니다. 거래 추가 폼의 채우기와 카테고리 추천은 API 서버가 있을 때 AI를 호출하고, 통계 채팅 도우미는 각본형 대역입니다. 자세한 실행 방법과 범위는 [UI 개발 환경](docs/ui_docs/mock-ui-development.md)에 있습니다.
+직접 입력은 서버 없이 가능한 [가계부 UI](ui/README.md)는 React·TypeScript·Vite와 shadcn/ui로 만들었습니다. 개발 컨테이너는 Node.js 24와 npm을 준비하고 UI 의존성 설치·테스트·빌드를 확인하며 `5173` 포트를 전달합니다. 컨테이너 터미널에서 `bash scripts/run_mock_ui.sh`를 실행하면 Codespaces 접속 주소를 Vite에 맞게 설정합니다. 거래는 브라우저 `localStorage`에 저장됩니다. 거래 추가 폼의 채우기와 카테고리 추천은 API 서버가 있을 때 AI를 호출하고, 통계 채팅 도우미는 각본형 대역입니다. 자세한 실행 방법과 범위는 [UI 개발 환경](docs/ui_docs/mock-ui-development.md)에 있습니다.
 
 ## 개발 및 실행 계획
 
-가계부 UI의 거래 저장은 브라우저 밖의 데이터 영속성·동기화가 아직 없습니다. 거래 채우기와 RAG 추천 API는 표준 라이브러리로 구현했으며, 별도 에이전트와 DB 구현은 후속 범위입니다.
+가계부 UI의 거래 저장은 브라우저 밖의 데이터 영속성·동기화가 아직 없습니다. 거래 채우기와 RAG 추천 API는 PostgreSQL·pgvector 검색 저장소와 연결되어 있습니다. 브라우저는 자료 구분용 `dataset_id` UUID를 유지하고 AI 요청에 전달합니다. 이 값은 인증 수단이 아닙니다. 확정 거래 수정·삭제는 다음 AI 요청에서 같은 유형의 검색 자료에 반영합니다. 로그인·전체 거래 동기화·별도 에이전트 서비스는 후속 범위입니다.
 
 ## 문서 업데이트
 

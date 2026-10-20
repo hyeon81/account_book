@@ -4,11 +4,13 @@ import { transactionDraftRequest } from '../../src/application/transactionDraft.
 import { requestTransactionDraft } from '../../src/infrastructure/transactionDraft.ts'
 import type { Transaction } from '../../src/domain/transaction.ts'
 
+const datasetId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+
 const saved: Transaction = {
   id: 'coffee', date: '2026-10-13', type: 'expense', amount: 5500,
   categoryId: 'cafe', merchant: '달빛커피', memo: '라떼',
 }
-const request = transactionDraftRequest('오늘 오후 3시에 카페에서 5천원 썼어', [saved], '2026-10-14')
+const request = transactionDraftRequest(datasetId, '오늘 오후 3시에 카페에서 5천원 썼어', [saved], '2026-10-14')
 const result = {
   status: 'draft', reason: '카페 근거', requires_confirmation: true,
   draft: { date: '2026-10-14', type: 'expense', amount: 5000, categoryId: 'cafe', merchant: '달빛커피', memo: '오후 3시' },

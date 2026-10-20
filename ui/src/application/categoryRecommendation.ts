@@ -1,7 +1,9 @@
+import { validateDatasetId } from './datasetId.ts'
 import { categories } from '../domain/transaction.ts'
 import type { Transaction, TransactionInput, TransactionType } from '../domain/transaction.ts'
 
 export type RecommendationRequest = {
+  dataset_id: string
   type: TransactionType
   merchant: string
   memo: string
@@ -17,10 +19,11 @@ export type RecommendationResult = {
   evidence: RecommendationEvidence[]
 }
 
-export function recommendationRequest(input: TransactionInput, history: Transaction[], editing?: TransactionInput): RecommendationRequest {
+export function recommendationRequest(datasetId: string, input: TransactionInput, history: Transaction[], editing?: TransactionInput): RecommendationRequest {
   if (input.merchant.trim().length > 500 || input.memo.trim().length > 1000) throw new Error('AI 추천은 사용처 500자, 메모 1,000자까지 사용할 수 있어요. 내용을 줄이거나 카테고리를 직접 선택해 주세요.')
   const editingId = (editing as Transaction | undefined)?.id
   const request: RecommendationRequest = {
+    dataset_id: validateDatasetId(datasetId),
     type: input.type, merchant: input.merchant.trim(), memo: input.memo.trim(),
     history: history.filter((item) => item.type === input.type && categories.some((category) => category.id === item.categoryId && category.type === input.type))
       .filter((item) => !editing || (editingId ? item.id !== editingId :
@@ -34,6 +37,7 @@ export function recommendationRequest(input: TransactionInput, history: Transact
 
 export function validateRecommendation(value: unknown, request: RecommendationRequest, originalRequest?: RecommendationRequest): RecommendationResult {
   const invalid = () => { throw new Error('AI 추천의 근거를 확인하지 못했어요. 카테고리를 직접 선택하거나 다시 시도해 주세요.') }
+  if (originalRequest && request.dataset_id !== originalRequest.dataset_id) return invalid()
   if (!value || typeof value !== 'object') return invalid()
   const result = value as RecommendationResult
   if (!['recommended', 'needs_clarification', 'unavailable'].includes(result.status) || result.requires_confirmation !== true ||

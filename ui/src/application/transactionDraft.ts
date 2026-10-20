@@ -1,9 +1,11 @@
+import { validateDatasetId } from './datasetId.ts'
 import { categories, seoulToday } from '../domain/transaction.ts'
 import type { Transaction, TransactionInput, TransactionType } from '../domain/transaction.ts'
 import { validateRecommendation } from './categoryRecommendation.ts'
 import type { RecommendationRequest, RecommendationResult } from './categoryRecommendation.ts'
 
 export type TransactionDraftRequest = {
+  dataset_id: string
   message: string
   reference_date: string
   timezone: 'Asia/Seoul'
@@ -25,11 +27,12 @@ const validDate = (value: string) => {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
 }
 
-export function transactionDraftRequest(message: string, history: Transaction[], referenceDate = seoulToday()): TransactionDraftRequest {
+export function transactionDraftRequest(datasetId: string, message: string, history: Transaction[], referenceDate = seoulToday()): TransactionDraftRequest {
   const text = message.trim()
   if (!text || text.length > 4000) throw new Error('거래 문장은 4,000자까지 보낼 수 있어요.')
   if (!validDate(referenceDate)) throw new Error('기준 날짜를 확인해 주세요.')
   const request: TransactionDraftRequest = {
+    dataset_id: validateDatasetId(datasetId),
     message: text,
     reference_date: referenceDate,
     timezone: 'Asia/Seoul',
@@ -45,6 +48,7 @@ export function transactionDraftRequest(message: string, history: Transaction[],
 
 function recommendationSnapshot(draft: TransactionInput, request: TransactionDraftRequest): RecommendationRequest {
   return {
+    dataset_id: request.dataset_id,
     type: draft.type,
     merchant: draft.merchant,
     memo: draft.memo,
@@ -54,6 +58,7 @@ function recommendationSnapshot(draft: TransactionInput, request: TransactionDra
 
 export function validateTransactionDraft(value: unknown, request: TransactionDraftRequest, latestRequest = request): TransactionDraftResult {
   const invalid = () => { throw new Error('AI 초안을 확인하지 못했어요. 직접 입력하거나 다시 시도해 주세요.') }
+  if (latestRequest.dataset_id !== request.dataset_id) return invalid()
   if (!value || typeof value !== 'object') return invalid()
   const result = value as TransactionDraftResult
   if (!['draft', 'needs_clarification', 'unavailable'].includes(result.status) ||

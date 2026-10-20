@@ -5,9 +5,11 @@ import { requestCategoryRecommendation } from '../../src/infrastructure/category
 import type { RecommendationResult } from '../../src/application/categoryRecommendation.ts'
 import type { Transaction, TransactionInput } from '../../src/domain/transaction.ts'
 
+const datasetId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+
 const input: TransactionInput = { date: '2026-10-13', type: 'expense', amount: 5000, categoryId: '', merchant: ' 달빛커피 ', memo: ' 라떼 ' }
 const transaction = (id: string, overrides: Partial<Transaction> = {}): Transaction => ({ ...input, id, categoryId: 'cafe', ...overrides })
-const request = recommendationRequest(input, [transaction('coffee')])
+const request = recommendationRequest(datasetId, input, [transaction('coffee')])
 const result: RecommendationResult = {
   status: 'recommended', category_id: 'cafe', reason: '저장된 같은 사용처의 카페 분류를 참고했어요.',
   evidence_ids: ['transaction:coffee'], requires_confirmation: true,

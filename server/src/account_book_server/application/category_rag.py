@@ -1,6 +1,7 @@
-"""Request-scoped semantic retrieval and grounded category recommendations."""
+"""Persistent semantic retrieval and grounded category recommendations."""
 
 import math
+from uuid import UUID
 
 from account_book_server.application.rag_provider import RagProvider
 
@@ -22,6 +23,21 @@ def _string(value, name, maximum, allow_empty=True):
     value = value.strip()
     if not allow_empty and not value:
         raise ValueError(f"Missing {name}")
+    return value
+
+
+def _dataset_id(payload):
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid request")
+    value = payload.get("dataset_id")
+    if not isinstance(value, str):
+        raise ValueError("Missing dataset id")
+    try:
+        parsed = UUID(value)
+    except ValueError as cause:
+        raise ValueError("Invalid dataset id") from cause
+    if parsed.version != 4 or str(parsed) != value:
+        raise ValueError("Invalid dataset id")
     return value
 
 
@@ -120,24 +136,29 @@ def _validate_answer(answer, retrieved, categories):
 class CategoryRag:
     """A provider supplies embed(texts) and generate(query, evidence, categories)."""
 
-    def __init__(self, provider: RagProvider, threshold: float = 0.25) -> None:
+    def __init__(self, provider: RagProvider, store, threshold: float = 0.25) -> None:
         if not isinstance(threshold, (float, int)) or not 0 <= threshold <= 1:
             raise ValueError("Invalid retrieval threshold")
         self.provider = provider
+        self.store = store
         self.threshold = threshold
 
     def recommend(self, payload: dict[str, object]) -> dict[str, object]:
+        dataset_id = _dataset_id(payload)
         query = _query(payload)
         categories = [dict(item) for item in CATEGORIES if item["type"] == query["type"]]
         documents = _documents(payload, categories)
         text = f"거래처: {query['merchant']}\n메모: {query['memo']}"
         try:
-            vectors = _vectors(self.provider.embed([item["text"] for item in documents] + [text]),
-                               len(documents) + 1)
-            scored = [(sum(a * b for a, b in zip(vector, vectors[-1])), index)
-                      for index, vector in enumerate(vectors[:-1])]
-            scored.sort(key=lambda item: (-item[0], item[1]))
-            retrieved = [documents[index] for score, index in scored[:5] if score >= self.threshold]
+            retrieved = self.store.retrieve(self.provider, documents, text, dataset_id,
+                                            query["type"], self.threshold)
+            # Only the exact current browser snapshot may ground a response.
+            by_id = {item["id"]: item for item in documents}
+            if (not isinstance(retrieved, list) or len(retrieved) > 5
+                    or any(not isinstance(item, dict) or item != by_id.get(item.get("id"))
+                           for item in retrieved)
+                    or len({item["id"] for item in retrieved}) != len(retrieved)):
+                raise ValueError("Invalid retrieved evidence")
             if not retrieved:
                 return _result("needs_clarification", "관련 근거를 찾지 못했습니다. 거래 내용을 더 입력하거나 카테고리를 직접 선택해 주세요.")
             answer = self.provider.generate(query, retrieved, categories)

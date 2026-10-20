@@ -1,6 +1,6 @@
 # RAG 카테고리 추천 구현
 
-## 요구사항 원문
+## 요구사항과 범위
 
 [이슈 #5: 카테고리 고르기 by AI](https://github.com/hyeon81/account_book/issues/5)의 사용자 설명:
 
@@ -8,40 +8,89 @@
 > RAG 내역들을 바탕으로 카테고리를 분류하는 그런 기능.
 > 일반적으로는 사용자가 입력하고, AI 버튼이 잇어서 AI 버튼을 누르면 AI가 결정해준다
 
-## 구현 계획과 범위
+거래 폼의 AI 버튼은 카테고리만 추천한다. **채우기** 버튼은 거래 추출 AI를 먼저 호출하고, 추출 성공 후 같은 요청 안에서 RAG 카테고리 분류를 호출한다. 추천과 거래 초안은 수정 가능한 폼에만 적용하며 사용자가 확인해 저장한다.
 
-1. 거래 입력·수정 폼의 카테고리 영역에 명시적인 AI 추천 버튼을 추가한다.
-2. 거래 추가 폼의 채우기 버튼은 거래 추출 AI를 먼저 호출해 날짜·유형·금액·사용처·메모 초안을 만든다.
-3. 추출이 성공한 경우에만 같은 요청 안에서 RAG 카테고리 분류를 이어서 호출한다.
-4. 같은 유형의 카테고리 정의와 현재 브라우저에서 확정한 최근 거래 100건을 검색 자료로 만든다.
-5. 같은 임베딩 모델로 자료와 질의를 벡터화하고 코사인 유사도 상위 5개를 검색한다.
-6. 검색 근거와 허용 카테고리만 모델에 전달해 구조화된 추천을 생성한다.
-7. 서버와 UI가 카테고리·유형·근거 ID를 검증한다. 결과는 수정 가능한 입력에만 적용하고 저장은 사용자 버튼으로 확정한다.
-8. 모호함·키 누락·통신 장애·입력 변경 중 응답을 테스트하고 수동 입력을 유지한다.
+현재 구현은 로컬 단일 사용자용이다. 거래 원본은 브라우저 `localStorage`에 유지한다. 서버의 PostgreSQL·pgvector에는 카테고리 정의와 확정 거래의 최소 검색 자료 및 임베딩을 저장한다. 이전 메모리 검색과 달리 변경되지 않은 자료의 임베딩은 요청과 컨테이너 재시작 사이에 재사용한다. 로그인, 다중 사용자 권한, 전체 거래 동기화, 별도 에이전트 서비스는 포함하지 않는다.
 
-구현은 로컬 단일 사용자용이다. 기존 거래 저장은 브라우저 `localStorage`를 사용한다. API는 거래를 저장하지 않으며 요청마다 현재 사례를 임베딩한다. 이전 요청의 자료나 벡터를 보관하지 않아 거래 수정·삭제는 다음 요청에 반영된다. 다른 브라우저의 내역을 공유하거나 사용자를 인증하는 서비스는 포함하지 않는다.
+## 실행과 설정
 
-## 실행
+Docker Desktop을 켠 뒤 저장소 루트에서 실행한다.
 
-Docker Desktop 실행 후 루트에서 `docker compose up --build`를 사용한다. UI는 `http://localhost:8080`, API는 Docker 내부에서만 연결된다. 개발 환경은 `docker compose -f docker-compose.dev.yml up --build`와 `http://localhost:5173`을 사용한다.
-
-OpenAI 키는 서버 프로세스의 `OPENAI_API_KEY` 환경변수로 전달한다. 브라우저에는 키를 넣지 않는다. 키가 없으면 AI 추천이 사용 불가로 표시되고 직접 선택·저장은 계속 가능하다. 실제 `.env` 파일을 읽거나 이미지에 포함할 필요가 없다. Compose가 기본 `.env`를 로드하지 않게 실행하려면 빈 파일을 지정한다.
-
-```powershell
-New-Item -ItemType File -Force "$env:TEMP/account-book-empty-env" | Out-Null
-docker compose --env-file "$env:TEMP/account-book-empty-env" up --build
+```bash
+docker compose up --build
 ```
 
-키는 셸에 안전한 방식으로 미리 주입하고 저장소에 기록하지 않는다. 모델은 `OPENAI_EMBEDDING_MODEL`(기본 `text-embedding-3-small`)과 `OPENAI_CATEGORY_MODEL`(기본 `gpt-4.1-mini`)로 변경할 수 있다. 생성 모델은 Responses API의 Structured Outputs를 지원해야 한다. 모델 접근 권한과 실제 호출 비용은 사용하는 OpenAI 프로젝트에 따른다.
+UI는 `http://localhost:8080`에서 열린다. 개발 UI는 다음 명령과 `http://localhost:5173`을 사용한다.
 
-Python 서버는 표준 라이브러리로 구현했다. 소스는 `server/src/account_book_server`, 테스트는 `server/tests/account_book_server`에 있고 외부 런타임 의존성은 없다. Docker는 패키지를 Python 설치 경로로 복사해 실행한다. 로컬 테스트는 루트 `pytest.ini`의 소스 경로 설정을 사용한다. 별도 패키지 설치가 필요한 환경에서는 `server/pyproject.toml`을 사용한다. 기존 설계의 FastAPI·Pydantic·LiteLLM·DB·별도 에이전트 서비스는 후속 범위다.
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+두 구성 모두 PostgreSQL 상태 확인 후 DB 초기화와 API 시작을 진행한다. API와 DB 포트는 호스트에 공개하지 않는다. DB 자료는 Compose 영속 볼륨에 남으며 일반적인 `docker compose down`으로 삭제되지 않는다. 볼륨을 삭제하면 저장된 검색 자료와 임베딩도 삭제된다. 거래 원본인 브라우저 저장소에는 영향을 주지 않는다.
+
+`.env.example`에는 `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`와 서버용 OpenAI 설정의 예시가 있다. Compose의 기본 `DATABASE_URL`은 내부 DB 호스트 `db`를 사용한다. DB 연결 주소와 PostgreSQL 계정 설정을 일치시킨다. 호스트에서 API를 직접 실행하면 도달 가능한 PostgreSQL 주소를 별도 지정해야 한다. 실제 비밀값은 로컬 실행 환경에서 설정하며 실제 `.env`를 읽거나 커밋하지 않는다. Compose는 실행 시 설정 파일을 로드할 수 있지만 이미지에는 포함하지 않는다. 키와 DB 연결 정보는 브라우저로 전달하지 않는다.
+
+임베딩 모델 기본값은 `OPENAI_EMBEDDING_MODEL=text-embedding-3-small`, 차원은 `OPENAI_EMBEDDING_DIMENSIONS=1536`, 분류 모델 기본값은 `OPENAI_CATEGORY_MODEL=gpt-4.1-mini`다. 임베딩 모델을 바꾸면 해당 모델이 지원하는 차원을 함께 설정한다. 거래 추출 모델은 `OPENAI_TRANSACTION_MODEL`로 별도 지정할 수 있고 없으면 분류 모델을 사용한다. 생성 모델은 Responses API의 Structured Outputs를 지원해야 한다.
+
+서버의 추가 런타임 의존성은 승인된 `psycopg[binary]`다. pgvector는 PostgreSQL 확장을 사용하며 Python 벡터 라이브러리는 추가하지 않는다. SQL 마이그레이션은 버전 관리하며 다음 명령으로 실행한다.
+
+```bash
+python -m account_book_server.migrate
+```
+
+반복 실행해도 기존 자료를 유지한다. 직접 실행할 때는 서버 패키지를 설치하고 `DATABASE_URL`을 서버 환경에 주입한다. Compose의 API 시작 과정도 같은 마이그레이션 명령을 사용한다.
+
+## 자료 구분과 임베딩 재사용
+
+브라우저는 UUID를 만들어 `localStorage`에 유지하고 두 AI 요청에 필수 `dataset_id`로 전달한다. 브라우저·출처별로 자료를 구분하기 위한 값이며 인증 토큰이나 사용자 권한이 아니다. 이 API를 다중 사용자 인터넷 서비스로 공개하는 것은 현재 범위 밖이다.
+
+| 저장 항목 | 내용 |
+| --- | --- |
+| 문서 ID·출처 | `category:<id>` 또는 `transaction:<id>` |
+| 자료 구분·유형 | `dataset_id`, `income` 또는 `expense` |
+| 카테고리 | 현재 확정된 허용 카테고리 ID |
+| 최소 텍스트 | 카테고리 이름·설명 또는 거래의 사용처·메모 |
+| 재사용 기준 | 텍스트 해시, 임베딩 모델·차원, 문서 형식 버전 |
+| 벡터 | 해당 모델로 생성한 임베딩 |
+
+금액·날짜·거래 추출 원문은 검색 저장소에 저장하지 않는다. 메모 자체에 입력된 내용은 최소 텍스트에 포함될 수 있다. 카테고리 정의는 서버 목록이 기준이다.
+
+1. 현재 요청의 같은 유형 카테고리 정의와 확정 이력으로 검색 문서를 만든다. 기존 최근 100건·요청 크기 제한을 유지하고 수정 중인 자기 거래는 UI에서 제외한다.
+2. 같은 자료 구분·거래 유형에서 요청에 빠진 사례를 제거한다. 빈 이력이면 해당 유형의 거래 사례를 모두 제거하고 카테고리 정의는 유지한다. 다른 유형의 이력은 지우지 않는다.
+3. 텍스트 해시·모델·차원·문서 형식이 일치하면 기존 임베딩을 재사용한다. 같은 사용처·메모에서 카테고리만 바뀌면 메타데이터만 갱신한다. 새 문서와 내용이 바뀐 문서만 임베딩한다.
+4. 질의는 요청마다 임베딩한다. 질의와 자료의 모델·차원이 다른 벡터는 비교하지 않는다.
+5. 현재 요청의 문서 ID·내용 버전과 일치하는 자료만 검색해 동시 요청에서 오래된 근거가 섞이지 않게 한다. 카테고리도 현재 요청과 대조한다.
+6. pgvector의 코사인 거리로 정확 검색을 수행하고 유사도 0.25 이상 상위 5개만 생성 모델에 전달한다. 현재 규모에서는 근사 검색 인덱스를 만들지 않는다. 유사도는 정답 확률이 아니다.
+
+수정·삭제는 저장 버튼을 누른 즉시 서버로 보내지 않는다. **다음 AI 요청**의 확정 이력 스냅샷으로 해당 유형의 검색 자료에 반영한다. 브라우저 데이터 삭제만으로 DB의 이전 자료를 즉시 삭제하지는 않는다. 변경된 자료를 임베딩할 수 없으면 해당 추천은 실패하며 이전 내용을 대신 사용하지 않는다.
+
+```mermaid
+sequenceDiagram
+    participant UI as 거래 폼
+    participant RAG as RAG 유스케이스
+    participant DB as PostgreSQL pgvector
+    participant E as 임베딩 API
+    participant C as 분류 AI
+    UI->>RAG: dataset_id와 유형 및 현재 확정 이력
+    RAG->>DB: 기존 문서 버전과 벡터 조회
+    DB-->>RAG: 재사용 가능한 임베딩
+    RAG->>E: 질의와 새 문서 또는 변경 문서
+    E-->>RAG: 임베딩
+    RAG->>DB: 해당 유형 문서 동기화 및 누락 사례 제거
+    RAG->>DB: 현재 문서 버전으로 제한한 코사인 검색
+    DB-->>RAG: 유사도 0.25 이상 상위 5개 근거
+    RAG->>C: 허용 카테고리와 검색 근거
+    C-->>RAG: 추천 또는 추가 질문
+    RAG-->>UI: 검증된 추천과 근거 또는 수동 선택 안내
+```
 
 ## 추천 API
 
-`POST /api/category-recommendation`은 JSON을 받는다. 금액과 날짜는 전송하지 않는다. `history`는 브라우저에서 확정한 거래의 현재 스냅샷이며, 추천 자체는 사례로 저장하지 않는다. 수정 폼의 현재 거래는 사례에서 제외한다.
+`POST /api/category-recommendation`은 JSON을 받는다. `dataset_id`는 필수 UUID다. `history`는 현재 브라우저에서 확정한 같은 유형의 최근 이력 스냅샷이며, 추천 자체는 확정 사례가 아니다. 금액과 날짜는 전송하지 않는다.
 
 ```json
 {
+  "dataset_id": "36d8d4d7-68c1-4eca-8fda-bb766bf74a38",
   "type": "expense",
   "merchant": "달빛커피",
   "memo": "라떼",
@@ -64,16 +113,17 @@ Python 서버는 표준 라이브러리로 구현했다. 소스는 `server/src/a
 }
 ```
 
-`recommended`는 검증된 추천, `needs_clarification`은 근거 부족·모호함, `unavailable`은 공급자 장애나 잘못된 출력이다. 뒤의 두 상태는 `category_id: null`이며 현재 수동 선택을 덮어쓰지 않는다. 추천 근거 ID는 `category:<id>`와 `transaction:<id>`를 사용한다. 코사인 유사도 0.25 미만 자료는 제외하고 최대 5개를 생성 입력으로 전달한다. 이 임계값은 정확도 확률이 아니며 실제 사용자 자료로 조정할 수 있다.
+응답 형식은 기존과 같다. `recommended`는 검증된 추천, `needs_clarification`은 근거 부족·모호함, `unavailable`은 DB·공급자 장애 또는 잘못된 출력이다. 뒤의 두 상태는 `category_id: null`이며 수동 선택을 덮어쓰지 않는다. 정의만 근거가 될 수도 있지만 근거가 전혀 없으면 임의 기본 카테고리를 추천하지 않는다.
 
 ## 거래 채우기 API
 
-`POST /api/transaction-draft`는 거래 추출 AI와 위 RAG 추천을 같은 요청 안에서 순서대로 호출한다. 추출 모델은 카테고리를 만들지 않는다. 서버가 추출 결과를 검증한 뒤 RAG가 같은 유형의 카테고리 정의와 확정 거래만 검색한다.
+`POST /api/transaction-draft`도 `dataset_id`를 필수로 받는다. 추출 모델은 카테고리를 만들지 않는다. 서버가 추출 결과를 검증한 뒤 RAG가 같은 유형의 카테고리 정의와 확정 거래만 동기화·검색한다.
 
 ```json
 {
+  "dataset_id": "36d8d4d7-68c1-4eca-8fda-bb766bf74a38",
   "message": "오늘 오후 3시에 카페에서 5천원 썼어",
-  "reference_date": "2026-10-14",
+  "reference_date": "2026-10-20",
   "timezone": "Asia/Seoul",
   "history": [
     {"id": "saved-1", "type": "expense", "category_id": "cafe", "merchant": "달빛커피", "memo": "아메리카노"}
@@ -84,89 +134,54 @@ Python 서버는 표준 라이브러리로 구현했다. 소스는 `server/src/a
 ```json
 {
   "status": "draft",
-  "reason": "저장된 커피 거래를 참고했어요.",
+  "reason": "카페 정의를 참고했어요.",
   "requires_confirmation": true,
   "draft": {
-    "date": "2026-10-14",
+    "date": "2026-10-20",
     "type": "expense",
     "amount": 5000,
     "categoryId": "cafe",
     "merchant": "카페",
-    "memo": "오늘 오후 3시에 카페에서 5천원 썼어"
+    "memo": "오후 3시"
   },
   "recommendation": {
     "status": "recommended",
     "category_id": "cafe",
-    "reason": "저장된 커피 거래를 참고했어요.",
-    "evidence_ids": ["transaction:saved-1"],
+    "reason": "카페 정의를 참고했어요.",
+    "evidence_ids": ["category:cafe"],
     "requires_confirmation": true,
     "evidence": [
-      {"id": "transaction:saved-1", "category_id": "cafe", "source": "transaction", "text": "거래처: 달빛커피\n메모: 아메리카노"}
+      {"id": "category:cafe", "category_id": "cafe", "source": "category", "text": "카페: 커피와 음료"}
     ]
   }
 }
 ```
 
-추출이 모호하면 `needs_clarification`과 추가 질문을 반환하고 RAG를 호출하지 않는다. 추출 실패는 `unavailable`로 끝난다. RAG만 실패하면 추출된 초안은 유지하되 `categoryId`를 비워 사용자가 직접 선택하게 한다. UI는 응답 도착 시점에 확정 거래 근거를 다시 검증하고, 입력이 바뀌었거나 폼이 닫힌 경우 응답을 폐기한다.
+추출이 모호하면 `needs_clarification`과 추가 질문을 반환하고 RAG를 호출하지 않는다. 추출 실패는 `unavailable`로 끝난다. RAG만 실패하면 추출된 초안은 유지하되 `categoryId`를 비워 사용자가 직접 선택하게 한다. UI는 응답 도착 시점에 현재 확정 거래 근거를 다시 검증하고 입력이 바뀌거나 폼이 닫힌 경우 응답을 폐기한다.
 
-입력은 사용처 500자, 메모 1,000자, 거래 ID 100자, 사례 100건, 요청 본문 200KB로 제한한다. API는 같은 유형과 현재 허용 카테고리만 검색한다. 잘못된 입력은 400, 요청 크기는 413, JSON 이외는 415, 허용되지 않은 Origin은 403, 동시 처리 초과는 503으로 응답한다. 기본 허용 Origin은 localhost와 127.0.0.1의 8080·5173이다. 다른 로컬 미리보기 주소는 서버의 `CATEGORY_ALLOWED_ORIGINS`에 쉼표로 나눠 지정한다.
-
-## 거래 채우기 API
-
-`POST /api/transaction-draft`는 사용자가 붙여넣은 카드 문자나 거래 문장을 받는다. 서버는 거래 추출 AI를 먼저 호출한다. 추출 모델의 출력은 날짜·유형·금액·사용처·메모로 제한하며 카테고리를 받지 않는다. 추출 성공 후 서버가 같은 요청 안에서 RAG 카테고리 분류를 호출한다.
-
-```json
-{
-  "message": "오늘 오후 3시에 달빛커피에서 5천원 썼어",
-  "reference_date": "2026-10-14",
-  "timezone": "Asia/Seoul",
-  "history": [
-    {"id": "saved-1", "type": "expense", "category_id": "cafe", "merchant": "달빛커피", "memo": "아메리카노"}
-  ]
-}
-```
-
-```json
-{
-  "status": "draft",
-  "draft": {
-    "date": "2026-10-14",
-    "type": "expense",
-    "amount": 5000,
-    "categoryId": "cafe",
-    "merchant": "달빛커피",
-    "memo": "오후 3시 라떼"
-  },
-  "reason": "저장된 커피 거래 근거를 사용했어요.",
-  "recommendation": {
-    "status": "recommended",
-    "category_id": "cafe",
-    "reason": "저장된 커피 거래 근거를 사용했어요.",
-    "evidence_ids": ["transaction:saved-1"],
-    "requires_confirmation": true,
-    "evidence": [
-      {"id": "transaction:saved-1", "category_id": "cafe", "source": "transaction", "text": "거래처: 달빛커피\n메모: 아메리카노"}
-    ]
-  },
-  "requires_confirmation": true
-}
-```
-
-추출 단계가 `needs_clarification`이면 RAG를 호출하지 않고 필요한 정보를 묻는다. 추출 장애는 `unavailable`과 `draft: null`로 응답한다. RAG만 실패하면 거래 초안은 유지하되 `categoryId`를 비우고 사용자가 직접 선택하게 한다. UI는 응답 시점에 최신 브라우저 내역으로 근거를 다시 검증하고, 폼 입력이 바뀐 뒤 도착한 응답은 적용하지 않는다.
+문장은 4,000자, 사용처는 500자, 메모는 1,000자, 거래 ID는 100자, 사례는 100건, 본문은 200KB로 제한한다. 잘못된 UUID를 포함한 입력 오류는 400, 요청 크기는 413, JSON 이외는 415, 허용되지 않은 Origin은 403, 동시 처리 초과는 503으로 응답한다. 기본 허용 Origin은 localhost와 127.0.0.1의 8080·5173이다. 다른 로컬 미리보기 주소는 서버의 `CATEGORY_ALLOWED_ORIGINS`에 쉼표로 나눠 지정한다.
 
 ## 자료 처리와 검증
 
-AI 버튼이나 채우기 버튼을 누를 때 사용처·메모와 같은 유형의 확정 분류 사례를 OpenAI 임베딩 API로 전송한다. 채우기 버튼은 원문 문장도 추출 모델로 전송한다. 검색된 근거만 Responses API로 전달하며 `store: false`를 지정한다. 공급자의 데이터 처리 정책 전체가 이 값 하나로 결정되는 것은 아니다. 서버는 본문과 공급자 오류 내용을 로그에 남기지 않고 응답 캐시도 금지한다.
+AI를 요청하면 질의와 새롭거나 변경된 검색 자료를 OpenAI 임베딩 API로 전송한다. 채우기는 원문 문장도 추출 모델로 전송한다. 검색된 근거만 Responses API로 전달하며 `store: false`를 지정한다. 공급자의 데이터 처리 정책 전체가 이 값 하나로 결정되는 것은 아니다. 서버는 본문·비밀값·공급자 오류 내용을 로그에 남기지 않고 응답 캐시도 금지한다.
 
-입력 변경·수동 카테고리 선택·대화상자 닫기·거래 채우기 초안 적용은 진행 중 응답을 취소하거나 무효화한다. 모델 입력 속 명령은 데이터로 취급하도록 지시하고, 반환된 카테고리와 인용 근거는 코드에서 다시 검사한다.
+저장·검색은 애플리케이션 인터페이스로 분리해 단위 테스트에 대역을 주입한다. 실제 PostgreSQL 통합 테스트는 마이그레이션 반복 실행, 문서 저장·갱신·삭제, 임베딩 재사용, 정확 코사인 검색, 모델·차원·자료 구분·유형 분리와 동시 요청의 근거 버전을 검증한다. 컨테이너 재시작 후에도 기존 벡터를 재사용하는지 별도로 확인한다.
 
 ```bash
 pytest
 python scripts/validate_docs.py
-cd ui
-npm test
-npm run lint
-npm run build
+npm --prefix ui test
+npm --prefix ui run lint
+npm --prefix ui run build
 ```
 
-자동 테스트는 가짜 공급자로 실제 검색 계산과 HTTP·OpenAI 요청 형식을 검증한다. 실제 키를 사용하는 외부 호출은 별도로 확인해야 한다. [임베딩 공식 문서](https://developers.openai.com/api/docs/guides/embeddings), [구조화 출력 공식 문서](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses)를 기반으로 구현했다.
+실제 DB 통합 검증은 DB를 먼저 시작하고 같은 Compose 프로젝트의 검증 컨테이너에서 실행한다. 아래 연결 정보는 기본 로컬 설정의 예시다. 계정을 변경했다면 연결 주소도 맞추되 비밀값을 저장소에 기록하지 않는다.
+
+```bash
+docker compose up -d db
+docker compose run --rm -e TEST_DATABASE_URL=postgresql://account_book:account_book_local@db:5432/account_book scripts pytest server/tests/test_postgres_vector_store.py
+```
+
+`TEST_DATABASE_URL`이 없는 일반 테스트 실행에서는 실제 DB 통합 테스트가 건너뛰어질 수 있으므로 단위 테스트 통과만으로 DB 검증을 대체하지 않는다. 통합 테스트에는 실제 키를 사용하지 않는다.
+
+자동 테스트에는 실제 키를 사용하지 않는다. 실제 AI를 사용하는 거래 채우기와 카테고리 단독 추천은 별도로 확인한다. [pgvector 공식 문서](https://github.com/pgvector/pgvector), [임베딩 공식 문서](https://developers.openai.com/api/docs/guides/embeddings), [구조화 출력 공식 문서](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses)를 참고한다.

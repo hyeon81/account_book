@@ -4,6 +4,8 @@ import { createTransactionDraftGate, transactionDraftRequest, validateTransactio
 import type { RecommendationResult } from '../../src/application/categoryRecommendation.ts'
 import type { Transaction } from '../../src/domain/transaction.ts'
 
+const datasetId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+
 const saved: Transaction = {
   id: 'coffee', date: '2026-10-13', type: 'expense', amount: 5500,
   categoryId: 'cafe', merchant: '달빛커피', memo: '라떼',
@@ -15,7 +17,7 @@ const recommendation: RecommendationResult = {
 }
 
 test('draft request sends the message, reference date and minimal confirmed history', () => {
-  const request = transactionDraftRequest(' 오늘 오후 3시에 카페에서 5천원 썼어 ', [saved, { ...saved, id: 'bad', categoryId: 'deleted' }], '2026-10-14')
+  const request = transactionDraftRequest(datasetId, ' 오늘 오후 3시에 카페에서 5천원 썼어 ', [saved, { ...saved, id: 'bad', categoryId: 'deleted' }], '2026-10-14')
   assert.equal(request.message, '오늘 오후 3시에 카페에서 5천원 썼어')
   assert.equal(request.reference_date, '2026-10-14')
   assert.equal(request.timezone, 'Asia/Seoul')
@@ -24,7 +26,7 @@ test('draft request sends the message, reference date and minimal confirmed hist
 })
 
 test('validated draft requires RAG recommendation to match the filled category', () => {
-  const request = transactionDraftRequest('카페 5천원', [saved], '2026-10-14')
+  const request = transactionDraftRequest(datasetId, '카페 5천원', [saved], '2026-10-14')
   const result = validateTransactionDraft({
     status: 'draft', reason: '분류 완료', requires_confirmation: true,
     draft: { date: '2026-10-14', type: 'expense', amount: 5000, categoryId: 'cafe', merchant: '달빛커피', memo: '오후 3시' },
@@ -36,8 +38,8 @@ test('validated draft requires RAG recommendation to match the filled category',
 })
 
 test('latest confirmed history must still support cited transaction evidence', () => {
-  const original = transactionDraftRequest('카페 5천원', [saved], '2026-10-14')
-  const latest = transactionDraftRequest('카페 5천원', [{ ...saved, memo: '수정된 메모' }], '2026-10-14')
+  const original = transactionDraftRequest(datasetId, '카페 5천원', [saved], '2026-10-14')
+  const latest = transactionDraftRequest(datasetId, '카페 5천원', [{ ...saved, memo: '수정된 메모' }], '2026-10-14')
   assert.throws(() => validateTransactionDraft({
     status: 'draft', reason: '분류 완료', requires_confirmation: true,
     draft: { date: '2026-10-14', type: 'expense', amount: 5000, categoryId: 'cafe', merchant: '달빛커피', memo: '오후 3시' },
@@ -46,7 +48,7 @@ test('latest confirmed history must still support cited transaction evidence', (
 })
 
 test('clarification and unavailable responses carry no draft or recommendation', () => {
-  const request = transactionDraftRequest('카페', [], '2026-10-14')
+  const request = transactionDraftRequest(datasetId, '카페', [], '2026-10-14')
   for (const status of ['needs_clarification', 'unavailable'] as const) {
     const result = validateTransactionDraft({ status, reason: '금액을 알려 주세요.', draft: null, recommendation: null, requires_confirmation: true }, request)
     assert.equal(result.draft, null)
@@ -64,4 +66,11 @@ test('manual changes and newer fill requests abort stale draft responses', () =>
   const latest = gate.start()
   assert.equal(older.signal.aborted, true)
   assert.equal(latest.isCurrent(), true)
+})
+
+test('draft requests require dataset UUID and reject responses after a dataset change', () => {
+  const request = transactionDraftRequest(datasetId, '카페 5천원', [saved], '2026-10-14')
+  assert.equal(request.dataset_id, datasetId)
+  assert.throws(() => transactionDraftRequest('', '카페', []), /자료 구분값/)
+  assert.throws(() => validateTransactionDraft({ status: 'unavailable', reason: '직접 입력', draft: null, recommendation: null, requires_confirmation: true }, request, { ...request, dataset_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }), /초안/)
 })

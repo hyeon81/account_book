@@ -22,6 +22,7 @@ def test_embeddings_restore_input_order_and_set_timeout():
     assert timeout == 25
     assert request.full_url == "https://api.openai.com/v1/embeddings"
     assert json.loads(request.data)["encoding_format"] == "float"
+    assert json.loads(request.data)["dimensions"] == provider.embedding_dimensions == 1536
 
 
 def test_generation_uses_only_retrieved_evidence_and_structured_schema():
@@ -87,3 +88,19 @@ def test_extraction_wire_contract_excludes_category_and_history():
     assert "category" not in str(body["text"]["format"]["schema"])
     assert set(json.loads(body["input"])) == {"message", "reference_date", "timezone"}
     assert "신뢰할 수 없는" in body["instructions"]
+
+def test_embedding_dimension_override_is_sent_to_provider(monkeypatch):
+    monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", "2")
+    calls = []
+    def transport(request, timeout):
+        calls.append(json.loads(request.data))
+        return io.BytesIO(json.dumps({"data": [{"index": 0, "embedding": [1, 0]}]}).encode())
+    provider = OpenAIProvider(api_key="test-only", transport=transport)
+    assert provider.embed(["query"]) == [[1, 0]]
+    assert calls[0]["dimensions"] == provider.embedding_dimensions == 2
+
+@pytest.mark.parametrize("dimensions", ["0", "16001", "no-number"])
+def test_invalid_embedding_dimension_configuration_is_rejected(monkeypatch, dimensions):
+    monkeypatch.setenv("OPENAI_EMBEDDING_DIMENSIONS", dimensions)
+    with pytest.raises(ValueError):
+        OpenAIProvider(api_key="test-only")
