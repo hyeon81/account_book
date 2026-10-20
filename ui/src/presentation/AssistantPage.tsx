@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { ArrowRight, Check, ClipboardPaste, Coffee, Send, Sparkles, TrendingDown, Utensils } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { AiFeatureTag } from './AiFeatureTag'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -61,6 +62,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   return <section className="assistant-page" aria-labelledby="assistant-title">
     <div className="page-heading"><div><h1 id="assistant-title">입력 도우미</h1><p>카드 문자나 짧은 문장으로 거래를 기록하세요.</p></div>
       <Button variant="outline" onClick={onCardMessage}><ClipboardPaste size={16} /> 채팅으로 거래 채우기</Button></div>
+    <div className="ai-feature-links"><span>실제 AI 채우기와 채팅 체험의 차이</span><AiFeatureTag feature="category-rag" /><AiFeatureTag feature="chat-statistics" /></div>
     <div className="assistant-layout">
       <Card className="surface-card chat-panel">
         <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>초안을 확인하고 저장해 주세요</small></div><Badge variant="secondary" className="chat-online">목 체험</Badge></div>

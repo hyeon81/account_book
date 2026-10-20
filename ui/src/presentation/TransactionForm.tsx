@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AiFeatureTag } from './AiFeatureTag'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -65,6 +66,7 @@ export function TransactionForm({ open, mode, initial, cardMessage = false, onOp
       <DialogDescription>거래 정보를 입력해 주세요. 금액은 원화로 기록됩니다.</DialogDescription></DialogHeader>
       {mode === 'create' && <CardMessageInput initiallyOpen={cardMessage} active={open} inputVersion={inputVersion}
         onDraft={applyCardDraft} onBlockedChange={setCardBlocked} />}
+      <div className="ai-feature-links"><AiFeatureTag feature="category-rag" newTab /></div>
       <form onSubmit={submit} className="transaction-form" noValidate>
         {generalError && <p className="form-error" role="alert">{generalError}</p>}
         <div className="form-field"><Label htmlFor="transaction-date">거래일 <span className="required">*</span></Label>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowDownUp, ChartNoAxesCombined, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
+import { ArrowDownUp, BookOpen, ChartNoAxesCombined, LayoutDashboard, Plus, Sparkles, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { monthOf, seoulToday } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
@@ -9,8 +9,10 @@ import { TransactionsPage } from './TransactionsPage'
 import { AssistantPage } from './AssistantPage'
 import { TransactionForm } from './TransactionForm'
 import { ReportsPage } from './ReportsPage'
+import { AiWikiPage } from './AiWikiPage'
+import { pageFromHash, wikiSectionFromHash } from '@/application/wikiNavigation'
 
-type Page = 'dashboard' | 'transactions' | 'assistant' | 'reports'
+type Page = 'dashboard' | 'transactions' | 'assistant' | 'reports' | 'wiki'
 type FormState = { mode: 'create' | 'edit' | 'draft'; initial?: TransactionInput; id?: string; afterSave?: () => void; cardMessage?: boolean }
 
 function initialLedger(): { items: Transaction[]; error: string } {
@@ -23,14 +25,34 @@ const navigation = [
   { id: 'transactions', label: '거래 내역', icon: ArrowDownUp },
   { id: 'reports', label: '리포트', icon: ChartNoAxesCombined },
   { id: 'assistant', label: '입력 도우미', icon: Sparkles },
+  { id: 'wiki', label: 'AI 위키', icon: BookOpen },
 ] as const
 
 export function AppShell() {
-  const [page, setPage] = useState<Page>('dashboard')
+  const [page, setCurrentPage] = useState<Page>(() => pageFromHash(window.location.hash))
+  const [wikiSection, setWikiSection] = useState(() => wikiSectionFromHash(window.location.hash) ?? 'overview')
+  const setPage = (next: Page) => {
+    window.location.hash = next === 'wiki' ? `ai-wiki/${wikiSection}` : next
+    setCurrentPage(next)
+  }
+  const openWikiSection = (section: string) => {
+    window.location.hash = `ai-wiki/${section}`
+    setWikiSection(section)
+  }
   const [month, setMonth] = useState(() => monthOf(seoulToday()))
   const [ledger, setLedger] = useState(initialLedger)
   const [form, setForm] = useState<FormState | null>(null)
   const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    const navigate = () => {
+      setCurrentPage(pageFromHash(window.location.hash))
+      setWikiSection(wikiSectionFromHash(window.location.hash) ?? 'overview')
+      setForm(null)
+    }
+    window.addEventListener('hashchange', navigate)
+    return () => window.removeEventListener('hashchange', navigate)
+  }, [])
 
   const reload = () => setLedger(initialLedger())
   useEffect(() => {
@@ -79,7 +101,7 @@ export function AppShell() {
       <div className="app-main">
         <header className="topbar">
           <div className="breadcrumb"><span>내 공간</span><span className="crumb-separator">/</span><strong>{navigation.find((item) => item.id === page)?.label}</strong></div>
-          <div className="top-actions"><span className="mock-pill"><span /> 브라우저에 저장 중</span>
+          <div className="top-actions"><Button variant="outline" size="sm" className="wiki-trigger" aria-current={page === 'wiki' ? 'page' : undefined} onClick={() => setPage('wiki')}><BookOpen size={15} /> AI 위키</Button><span className="mock-pill"><span /> 브라우저에 저장 중</span>
             <Button className="top-add" onClick={() => setForm({ mode: 'create' })}><Plus size={16} /> 거래 추가</Button>
           </div>
         </header>
@@ -95,6 +117,7 @@ export function AppShell() {
             onConfirmDraft={confirmDraft} onEditDraft={(draft, afterSave) => setForm({ mode: 'draft', initial: draft, afterSave })}
             onCardMessage={() => setForm({ mode: 'create', cardMessage: true })}
             onTransactions={() => setPage('transactions')} /></div>
+          <div hidden={page !== 'wiki'}>{page === 'wiki' && <AiWikiPage section={wikiSection} onSectionChange={openWikiSection} onAssistant={() => setPage('assistant')} />}</div>
         </main>
       </div>
       <TransactionForm key={`${form?.mode}-${form?.id ?? 'new'}-${form ? 'open' : 'closed'}`}

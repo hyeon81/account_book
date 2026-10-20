@@ -5,6 +5,7 @@ import './styles/layout.css'
 import './styles/transactions.css'
 import './styles/assistant.css'
 import './styles/reports.css'
+import './styles/ai-tags.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

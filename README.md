@@ -45,14 +45,18 @@ account_book/
     │   ├── category-rag.md
     │   ├── chat-statistics.md
     │   ├── rule-statistics.md
-    │   └── card-message-preview.md
+    │   ├── card-message-preview.md
+    │   ├── tools.md
+    │   ├── mcp.md
+    │   └── plan-and-execute.md
     ├── ui_docs/
     │   ├── ui-design.md
     │   ├── dashboard.md
     │   ├── transactions.md
     │   ├── reports.md
     │   ├── assistant.md
-    │   └── mock-ui-development.md
+    │   ├── mock-ui-development.md
+    │   └── ai-wiki.md
     ├── agent-account-book-design.md
     ├── development-rules.md
     ├── python-conventions.md
@@ -61,7 +65,7 @@ account_book/
 
 ## 설계 문서
 
-[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 채우기와 카테고리 추천의 실행 방법과 API는 [RAG 구현 문서](docs/ai/category-rag-implementation.md)를 참고하세요. 통계 채팅 도우미는 기존 각본형 대역입니다.
+[가계부 AI 설계와 교육 실습](docs/ai/README.md)에 요구사항 원문과 계획, 공통 에이전트 구조, RAG 카테고리 추천, 채팅 통계와 규칙 기반 통계를 정리했습니다. 채우기와 카테고리 추천의 실행 방법과 API는 [RAG 구현 문서](docs/ai/category-rag-implementation.md)를 참고하세요. 통계 채팅 도우미는 기존 각본형 대역입니다. [공통 도구 계약](docs/ai/tools.md), [Plan-and-Execute](docs/ai/plan-and-execute.md), [MCP 연결](docs/ai/mcp.md)은 후속 설계입니다. 상단 AI 위키와 안내 태그에서 구현된 기능과 설계를 구분해 읽을 수 있습니다. [AI 위키 안내](docs/ui_docs/ai-wiki.md)를 참고하세요.
 
 [AI 에이전트 가계부 설계 초안](docs/agent-account-book-design.md)에서 Mermaid 시스템 구성도, UI 서버·API 서버·에이전트·DB의 기술 스택, Docker Compose 구성과 환경변수 관리 계획을 확인할 수 있습니다.
 

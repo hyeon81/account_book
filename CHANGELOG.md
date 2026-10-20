@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- 현재 UI에 AI 위키와 안내 태그를 연결하고 구현된 거래 채우기·RAG 추천과 후속 통계·MCP 설계를 구분했다.
+- 공통 도구·Plan-and-Execute·MCP 설계 문서를 추가하고 UI 문서를 `docs/ui_docs`로 통합했다.
+
 ### 추가
 
 - PostgreSQL·pgvector 검색 저장소와 승인된 `psycopg[binary]` 의존성. 버전 관리 SQL 마이그레이션, 내부 DB 서비스와 영속 볼륨을 추가했다.

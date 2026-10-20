@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, CirclePlus, Plus, ReceiptText } from 'lucide-react'
+import { AiFeatureTag } from './AiFeatureTag'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -31,6 +32,7 @@ export function DashboardPage({ month, onMonthChange, transactions, onAdd, onTra
         </div></div>
       </div>
 
+      <div className="ai-feature-links"><span>앞으로 제공할 기능</span><AiFeatureTag feature="rule-statistics" /><AiFeatureTag feature="plan-and-execute" /></div>
       <>
           <div className="summary-grid">
             <Card className="metric-card"><CardContent className="metric-content"><div className="metric-header"><span>총 수입</span><span className="metric-icon income"><ArrowDownRight size={18} /></span></div>
