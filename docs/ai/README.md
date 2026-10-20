@@ -11,6 +11,7 @@
 | [거래 채우기 AI 파이프라인](transaction-draft.md) | 거래 추출 AI와 RAG 분류의 순차 호출 |
 | [RAG 카테고리 추천](category-rag.md) | 검색 자료 준비, 의미 검색, 근거를 사용한 분류와 평가 |
 | [채팅 통계 조회](chat-statistics.md) | 자연어 질문을 검증된 기간·필터·집계로 변환 |
+| [채팅 통계 구현 계획 초안](chat-statistics-implementation-plan.md) | 4개 feature, 서비스·인터페이스·요청 흐름과 먼저 결정할 자료 경계 |
 | [규칙 기반 통계](rule-statistics.md) | 상황에 맞는 통계 규칙 선택과 서버의 결정적 실행 |
 | [Plan-and-Execute 주간 비교](plan-and-execute.md) | 계획 생성·검증·실행·비교·설명의 분리 |
 | [공통 도구 계약](tools.md) | 입력·출력·문맥·권한·오류 |
