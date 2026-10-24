@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { categoryFor, seoulToday } from '@/domain/transaction'
 import type { TransactionInput } from '@/domain/transaction'
 import { createTransactionDraftGate, transactionDraftRequest, validateTransactionDraft } from '@/application/transactionDraft'
-import { localLedger } from '@/infrastructure/localLedger'
+import { transactionApi } from '@/infrastructure/transactionApi'
 import { requestTransactionDraft } from '@/infrastructure/transactionDraft'
 
 type Props = {
@@ -37,17 +37,21 @@ export function CardMessageInput({ initiallyOpen, active, inputVersion, onDraft,
   }
   const send = async () => {
     const text = message.trim()
-    if (!text || loading) return
+    if (!active || !text || loading) return
     setMessage(''); setLoading(true); setInvalid(false); onBlockedChange(true)
     setHistory((lines) => [...lines, { role: 'user', text }])
     const pending = gate.current.start()
     const startInputVersion = latestInputVersion.current
     try {
       const fullMessage = context ? `${context} ${text}` : text
-      const request = transactionDraftRequest(getBrowserDatasetId(), fullMessage, localLedger.load(), today)
+      const confirmedHistory = await transactionApi.load(pending.signal)
+      if (!pending.isCurrent() || latestInputVersion.current !== startInputVersion) return
+      const request = transactionDraftRequest(getBrowserDatasetId(), fullMessage, confirmedHistory, today)
       const response = await requestTransactionDraft(request, pending.signal)
       if (!pending.isCurrent() || latestInputVersion.current !== startInputVersion) return
-      const result = validateTransactionDraft(response, request, transactionDraftRequest(getBrowserDatasetId(), fullMessage, localLedger.load(), today))
+      const latestHistory = await transactionApi.load(pending.signal)
+      if (!pending.isCurrent() || latestInputVersion.current !== startInputVersion) return
+      const result = validateTransactionDraft(response, request, transactionDraftRequest(getBrowserDatasetId(), fullMessage, latestHistory, today))
       if (result.status === 'draft' && result.draft) {
         onDraft(result.draft)
         const category = categoryFor(result.draft.categoryId)
@@ -97,14 +101,14 @@ export function CardMessageInput({ initiallyOpen, active, inputVersion, onDraft,
         {loading && <div className="form-chat-line assistant"><strong>모아</strong><span>거래를 추출하고 카테고리 근거를 찾고 있어요…</span></div>}
       </div>
       <Label htmlFor="card-message">카드 문자 또는 거래 문장</Label>
-      <Textarea id="card-message" rows={3} value={message} placeholder="오늘 오후 3시에 카페에서 5천원 썼어" disabled={loading}
+      <Textarea id="card-message" rows={3} value={message} placeholder="오늘 오후 3시에 카페에서 5천원 썼어" disabled={!active || loading}
         onChange={(event) => change(event.target.value)} aria-invalid={invalid} aria-describedby="card-message-notice"
         onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
       <div className="card-message-tools">
-        <Button type="button" size="sm" disabled={loading || !message.trim()} onClick={() => void send()}><Send size={14} /> 채우기</Button>
-        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => change('오늘 오후 3시에 카페에서 5천원 썼어')}>문장 예시</Button>
-        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => change(cardExample)}>카드 문자 예시</Button>
-        <Button type="button" variant="ghost" size="sm" disabled={loading} onClick={() => { gate.current.invalidate(); change(''); setContext(''); setInvalid(false); setNotice('채팅 내용을 지웠어요. 아래 항목을 직접 수정할 수 있어요.'); setHistory([]); setLoading(false); onBlockedChange(false) }}>직접 입력으로 계속</Button>
+        <Button type="button" size="sm" disabled={!active || loading || !message.trim()} onClick={() => void send()}><Send size={14} /> 채우기</Button>
+        <Button type="button" variant="outline" size="sm" disabled={!active || loading} onClick={() => change('오늘 오후 3시에 카페에서 5천원 썼어')}>문장 예시</Button>
+        <Button type="button" variant="outline" size="sm" disabled={!active || loading} onClick={() => change(cardExample)}>카드 문자 예시</Button>
+        <Button type="button" variant="ghost" size="sm" disabled={!active || loading} onClick={() => { gate.current.invalidate(); change(''); setContext(''); setInvalid(false); setNotice('채팅 내용을 지웠어요. 아래 항목을 직접 수정할 수 있어요.'); setHistory([]); setLoading(false); onBlockedChange(false) }}>직접 입력으로 계속</Button>
       </div>
       <small id="card-message-notice" className={invalid ? 'field-error' : 'card-message-notice'} role="status">{notice || 'Enter로 보내기 · Shift+Enter로 줄바꿈. 문장과 확정 거래의 최소 분류 내역이 AI 서버로 전송됩니다.'}</small>
     </div>

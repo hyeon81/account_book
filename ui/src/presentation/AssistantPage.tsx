@@ -14,7 +14,7 @@ type Message = { id: number; role: 'user' | 'assistant'; text: string; reply?: M
 type Props = {
   month: string
   transactions: Transaction[]
-  onConfirmDraft: (draft: TransactionInput) => void
+  onConfirmDraft: (draft: TransactionInput) => Promise<unknown>
   onEditDraft: (draft: TransactionInput, onSaved: () => void) => void
   onTransactions: () => void
   onCardMessage: () => void
@@ -32,6 +32,8 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
   const [pendingQuestion, setPendingQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const saving = useRef(false)
+  const [savingDraft, setSavingDraft] = useState(false)
   const nextMessageId = useRef(1)
 
   const markConfirmed = (id: number) => setMessages((current) => current.map((message) => message.id === id ? { ...message, confirmed: true } : message))
@@ -54,9 +56,12 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
       setText(message)
     } finally { setLoading(false) }
   }
-  const confirm = (message: Message, draft: TransactionInput) => {
-    try { onConfirmDraft(draft); markConfirmed(message.id); setError('') }
+  const confirm = async (message: Message, draft: TransactionInput) => {
+    if (saving.current) return
+    saving.current = true; setSavingDraft(true)
+    try { await onConfirmDraft(draft); markConfirmed(message.id); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : '초안을 저장하지 못했어요.') }
+    finally { saving.current = false; setSavingDraft(false) }
   }
 
   return <section className="assistant-page" aria-labelledby="assistant-title">
@@ -80,8 +85,8 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
                 <div className="draft-details"><span>거래일 <strong>{dateLabel(reply.draft.date)}</strong></span><span>유형 <strong>{reply.draft.type === 'income' ? '수입' : '지출'}</strong></span>
                   <span>카테고리 <strong>{categoryFor(reply.draft.categoryId)?.name ?? '직접 선택 필요'}</strong></span><span>사용처 <strong>{reply.draft.merchant || '미입력'}</strong></span></div>
                 {reply.draft.memo && <p className="draft-memo">메모: {reply.draft.memo}</p>}
-                {!message.confirmed && <div className="draft-actions"><Button variant="outline" onClick={() => onEditDraft(reply.draft, () => markConfirmed(message.id))}>수정 후 저장</Button>
-                  <Button disabled={!reply.draft.categoryId} onClick={() => confirm(message, reply.draft)}><Check size={15} /> 거래 확정</Button></div>}
+                {!message.confirmed && <div className="draft-actions"><Button variant="outline" disabled={savingDraft} onClick={() => onEditDraft(reply.draft, () => markConfirmed(message.id))}>수정 후 저장</Button>
+                  <Button disabled={savingDraft || !reply.draft.categoryId} onClick={() => void confirm(message, reply.draft)}><Check size={15} /> 거래 확정</Button></div>}
               </div>}
             </div>
           </div> })}
