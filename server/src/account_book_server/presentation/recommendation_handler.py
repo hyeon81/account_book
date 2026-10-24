@@ -1,10 +1,11 @@
 """Local-only HTTP entry point for browser ledger recommendations."""
 import json
 from http.server import BaseHTTPRequestHandler
+from .transaction_handler import TransactionHandler
 
 
 
-class RecommendationHandler(BaseHTTPRequestHandler):
+class RecommendationHandler(TransactionHandler, BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, *_args) -> None:
@@ -24,12 +25,16 @@ class RecommendationHandler(BaseHTTPRequestHandler):
         self.close_connection = True
 
     def do_GET(self) -> None:
+        if self._ledger_route("GET"):
+            return
         if self.path == "/api/health":
             self._reply(200, {"status": "ok"})
         else:
             self._reply(404, {"error": "경로를 찾을 수 없어요."})
 
     def do_POST(self) -> None:
+        if self._ledger_route("POST"):
+            return
         if self.path not in ("/api/category-recommendation", "/api/transaction-draft"):
             self._reply(404, {"error": "경로를 찾을 수 없어요."})
             return
@@ -65,3 +70,11 @@ class RecommendationHandler(BaseHTTPRequestHandler):
             self._reply(503, {"error": "지금은 AI 추천을 사용할 수 없어요. 직접 선택해 주세요."})
         finally:
             self.server.slots.release()
+
+    def do_PATCH(self) -> None:
+        if not self._ledger_route("PATCH"):
+            self._reply(404, {"error": "경로를 찾을 수 없어요."})
+
+    def do_DELETE(self) -> None:
+        if not self._ledger_route("DELETE"):
+            self._reply(404, {"error": "경로를 찾을 수 없어요."})

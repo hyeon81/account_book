@@ -1,4 +1,4 @@
-"""Persistent exact cosine retrieval; ledger originals remain in the browser."""
+"""Persistent exact cosine retrieval, separate from the canonical ledger tables."""
 import hashlib
 import json
 import math
