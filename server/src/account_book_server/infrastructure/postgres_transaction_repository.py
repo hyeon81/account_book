@@ -6,6 +6,7 @@ import os
 from account_book_server.application.ledger import encode_cursor
 from account_book_server.domain.ledger_error import LedgerError
 from account_book_server.domain.transaction import FIELDS, validate_transaction
+from .transaction_filters import transaction_filters
 
 COLUMNS = "id, date, type, amount, currency, category_id, merchant, memo, status"
 
@@ -44,21 +45,14 @@ class PostgresTransactionRepository:
                               options=options + " -c statement_timeout=10000 -c lock_timeout=10000", row_factory=dict_row)
 
     def list(self, filters):
-        conditions = ["status = 'confirmed'"]
-        params = []
-        for field, expression in (("from", "date >= %s"), ("to", "date <= %s"),
-                                  ("type", "type = %s"), ("category_id", "category_id = %s"),
-                                  ("merchant", "strpos(lower(merchant), lower(%s)) > 0")):
-            if field in filters:
-                conditions.append(expression)
-                params.append(filters[field])
+        where, params = transaction_filters(filters)
         if "cursor" in filters:
-            conditions.append("(date, id) < (%s::date, %s)")
+            where += " AND (date, id) < (%s::date, %s)"
             params.extend(filters["cursor"])
         limit = filters["limit"]
         params.append(limit + 1)
         with self._connect() as connection:
-            rows = connection.execute(f"SELECT {COLUMNS} FROM transactions WHERE " + " AND ".join(conditions)
+            rows = connection.execute(f"SELECT {COLUMNS} FROM transactions WHERE " + where
                                       + " ORDER BY date DESC, id DESC LIMIT %s", params).fetchall()
         items = [public_row(row) for row in rows[:limit]]
         return {"items": items, "next_cursor": encode_cursor(items[-1]) if len(rows) > limit else None}

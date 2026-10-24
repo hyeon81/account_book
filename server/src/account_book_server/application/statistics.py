@@ -2,6 +2,7 @@
 from datetime import date
 
 from .ledger import validate_filters
+from .statistics_repository import StatisticsRepository
 from account_book_server.domain.transaction import invalid
 
 
@@ -13,7 +14,7 @@ def period(start, end):
 
 
 class Statistics:
-    def __init__(self, repository):
+    def __init__(self, repository: StatisticsRepository):
         self.repository = repository
 
     def frequency(self, query):
