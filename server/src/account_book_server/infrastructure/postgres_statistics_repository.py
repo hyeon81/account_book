@@ -1,12 +1,6 @@
 """Exact SQL aggregates over the canonical confirmed ledger."""
-from decimal import Decimal
-
 from account_book_server.domain.transaction import CATEGORIES
 from .transaction_filters import transaction_filters
-
-
-def numeric_row(row):
-    return {key: float(value) if isinstance(value, Decimal) else value for key, value in row.items()}
 
 
 class PostgresStatisticsRepository:
@@ -23,7 +17,7 @@ class PostgresStatisticsRepository:
                             ELSE NULL END AS average_interval_days,
                        round(avg(amount), 2) AS average_amount
                 FROM transactions WHERE """ + where, params).fetchone()
-        return numeric_row(row)
+        return dict(row)
 
     def compare(self, a, b, filters):
         where, params = transaction_filters(filters)
@@ -47,7 +41,7 @@ class PostgresStatisticsRepository:
             rows = connection.execute(query, dates + params + dates).fetchall()
         totals = {}
         for row in rows:
-            item = numeric_row(row)
+            item = dict(row)
             # PostgreSQL sum(bigint) is numeric; preserve integer totals exactly.
             for field in ("a_total", "b_total", "difference"):
                 item[field] = int(row[field])

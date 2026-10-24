@@ -2,10 +2,12 @@
 import json
 from http.server import BaseHTTPRequestHandler
 from .transaction_handler import TransactionHandler
+from .statistics_handler import StatisticsHandler
+from .json_response import encode_json
 
 
 
-class RecommendationHandler(TransactionHandler, BaseHTTPRequestHandler):
+class RecommendationHandler(StatisticsHandler, TransactionHandler, BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, *_args) -> None:
@@ -13,7 +15,7 @@ class RecommendationHandler(TransactionHandler, BaseHTTPRequestHandler):
         pass
 
     def _reply(self, status: int, payload: dict) -> None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        body = encode_json(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -25,6 +27,8 @@ class RecommendationHandler(TransactionHandler, BaseHTTPRequestHandler):
         self.close_connection = True
 
     def do_GET(self) -> None:
+        if self._statistics_route():
+            return
         if self._ledger_route("GET"):
             return
         if self.path == "/api/health":

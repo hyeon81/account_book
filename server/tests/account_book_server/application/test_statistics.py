@@ -60,3 +60,5 @@ def test_compare_rejects_invalid_filters(changes):
 
 def test_inclusive_leap_year_period_allows_366_days():
     Statistics(Repository()).frequency({**QUERY, "from": "2024-01-01", "to": "2024-12-31"})
+    with pytest.raises(LedgerError):
+        Statistics(Repository()).frequency({**QUERY, "from": "2024-01-01", "to": "2025-01-01"})

@@ -1,5 +1,6 @@
 """Run aggregate SQL against real PostgreSQL, not a Python calculator."""
 import os
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -53,7 +54,7 @@ def test_empty_single_same_day_and_payment_interval(storage):
     result = stats.frequency(PERIOD)
     assert (result["payment_count"], result["active_days"]) == (3, 2)
     assert result["average_interval_days"] == 3
-    assert result["average_amount"] == 101.33
+    assert result["average_amount"] == Decimal("101.33")
 
 
 def test_inclusive_boundaries_and_filters_match_listing(storage):
@@ -91,7 +92,7 @@ def test_compare_baseline_zero_fill_overlap_and_exact_integer_totals(storage):
     assert [r["category_id"] for r in result] == sorted(r["category_id"] for r in result)
     rows = {r["category_id"]: r for r in result}
     assert rows["cafe"] == {"category_id": "cafe", "a_total": 300, "b_total": 400,
-                            "difference": 100, "change_rate_percent": 33.3}
+                            "difference": 100, "change_rate_percent": Decimal("33.3")}
     assert rows["transport"]["change_rate_percent"] == -100
     assert rows["food"]["change_rate_percent"] is None
     assert rows["health"]["change_rate_percent"] is None
@@ -103,3 +104,35 @@ def test_compare_baseline_zero_fill_overlap_and_exact_integer_totals(storage):
     health = stats.compare({**COMPARE, "category_id": "health"})["items"][0]
     assert health["b_total"] == 27021597764222973
     assert isinstance(health["b_total"], int)
+
+
+def test_http_to_postgres_preserves_large_decimal_averages(storage):
+    import json
+    from threading import Thread
+    from urllib.request import urlopen
+    from account_book_server.main import create_server
+    ledger, stats = storage
+    ledger.create({**ITEM, "amount": 9007199254740990})
+    ledger.create({**ITEM, "amount": 9007199254740991})
+    server = create_server(port=0, statistics=stats)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        path = "/api/stats/frequency?from=2026-10-01&to=2026-10-07&type=expense"
+        with urlopen(f"http://127.0.0.1:{server.server_port}" + path, timeout=3) as response:
+            body = json.load(response, parse_float=Decimal)
+        assert body["payment_count"] == 2
+        assert body["average_amount"] == Decimal("9007199254740990.50")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def test_income_comparison_excludes_expense(storage):
+    ledger, stats = storage
+    ledger.create({**ITEM, "date": "2026-09-30", "type": "income", "category_id": "salary", "amount": 100})
+    ledger.create({**ITEM, "type": "income", "category_id": "salary", "amount": 150})
+    ledger.create({**ITEM, "amount": 900})
+    row = stats.compare({**COMPARE, "type": "income", "category_id": "salary"})["items"][0]
+    assert (row["a_total"], row["b_total"], row["difference"], row["change_rate_percent"]) == (100, 150, 50, 50)
