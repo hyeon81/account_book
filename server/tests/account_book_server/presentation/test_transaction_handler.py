@@ -1,6 +1,7 @@
 """Actual HTTP boundary with injected storage, never an AI key."""
 import json
 import threading
+from http.client import HTTPConnection
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -72,12 +73,28 @@ def test_database_failure_is_not_empty_success(endpoint):
     assert b"secret" not in result
 
 
-@pytest.mark.parametrize("body,status", [(b"null", 422), (b"{", 422), (b" " * 200001, 413)],
-                         ids=["null", "malformed", "oversized"])
+@pytest.mark.parametrize("body,status", [(b"null", 422), (b"{", 422)], ids=["null", "malformed"])
 def test_invalid_body_does_not_hang_or_save(endpoint, body, status):
     req = Request(endpoint[0] + "/api/transactions", data=body,
                   headers={"Content-Type": "application/json"})
     with pytest.raises(HTTPError) as error:
         urlopen(req, timeout=2)
     assert error.value.code == status
+    assert request(endpoint, "/api/transactions")[1]["items"] == []
+
+
+def test_oversized_body_is_rejected_before_reading_or_saving(endpoint):
+    # The size limit must be enforced from headers, before waiting for a body.
+    # Avoid a large concurrent upload whose unread bytes reset TCP on Windows.
+    connection = HTTPConnection("127.0.0.1", endpoint[1].server_port, timeout=2)
+    try:
+        connection.putrequest("POST", "/api/transactions")
+        connection.putheader("Content-Type", "application/json")
+        connection.putheader("Content-Length", "200001")
+        connection.endheaders()
+        response = connection.getresponse()
+        assert response.status == 413
+        assert json.loads(response.read())["error"]["code"] == "REQUEST_TOO_LARGE"
+    finally:
+        connection.close()
     assert request(endpoint, "/api/transactions")[1]["items"] == []
