@@ -21,7 +21,7 @@ flowchart LR
 MCP 어댑터는 [공통 도구](tools.md)의 JSON Schema·메서드·결과 형식만 변환하고
 계산·권한 판정은 서버 유스케이스를 재사용한다.
 DB 연결 정보·내부 서비스 토큰·직접 SQL 접근을 외부 AI에 제공하지 않는다.
-브라우저의 localStorage 자료는 서버 자료가 아니므로 현재 UI 기록을 MCP가 읽을 수 없다.
+거래 원본은 [서버 거래 저장](../server-ledger.md)으로 PostgreSQL에 있지만 MCP 서버와 인증·도구는 미구현이므로 현재 UI 기록을 MCP로 조회할 수 없다. 가져오지 않은 localStorage 백업은 서버 자료가 아니다.
 
 ## 초기 노출 범위
 
