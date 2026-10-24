@@ -20,7 +20,9 @@
 
 ## 현재 구현과 설계의 관계
 
-현재 거래 원본은 [서버 거래 저장](../server-ledger.md)의 PostgreSQL 거래 테이블에 저장한다. 기존 localStorage 자료는 사용자가 명시적으로 가져오며 브라우저 백업을 유지한다. RAG 검색 자료와 임베딩은 PostgreSQL·pgvector에 영속 저장하며, 변경되지 않은 문서의 임베딩을 재사용한다. 거래 추가 폼의 **채우기**는 `/api/transaction-draft`를 통해 실제 OpenAI 호출을 사용하고, 카테고리 영역의 AI 추천은 `/api/category-recommendation`의 RAG 검색을 사용한다. `ui/src/infrastructure/scriptedAssistant.ts`는 통계 채팅 화면에 남아 있는 각본형 대역이다. 주간 횟수 집계와 통계 규칙 실행은 구현되어 있지 않다.
+현재 거래 원본은 [서버 거래 저장](../server-ledger.md)의 PostgreSQL 거래 테이블에 저장한다. 기존 localStorage 자료는 사용자가 명시적으로 가져오며 브라우저 백업을 유지한다. RAG 검색 자료와 임베딩은 PostgreSQL·pgvector에 영속 저장하며, 변경되지 않은 문서의 임베딩을 재사용한다. 거래 추가 폼의 **채우기**는 `/api/transaction-draft`를 통해 실제 OpenAI 호출을 사용하고, 카테고리 영역의 AI 추천은 `/api/category-recommendation`의 RAG 검색을 사용한다.
+
+모델 없는 `/api/stats/frequency`와 `/api/stats/compare`는 확정 거래를 SQL로 집계한다. 필수 날짜·유형, 선택 필터, 계산·오류·응답은 [API 계약의 집계 절](../api-contract.md#구현된-집계-계약)이 기준이다. `/api/summary`는 이번 구현 범위에 없다. `ui/src/infrastructure/scriptedAssistant.ts`는 통계 채팅 화면에 남아 있는 각본형 대역이며 상대 기간 해석·통계 도구·대화형 모델·통계 규칙 실행은 아직 구현되어 있지 않다.
 
 [전체 서비스 설계](../agent-account-book-design.md)의 `ui → server → agent` 구조와 LiteLLM 기반 모델 호출 계획을 따른다. 이 문서들의 내부 도구와 JSON은 후속 구현 제안이다. 현재 [API 계약](../api-contract.md)의 확정된 문서 범위와 섞지 않으며, 구현 시 계약과 테스트를 함께 갱신한다.
 

@@ -1,6 +1,6 @@
 # 가계부 API 계약 초안
 
-이 문서는 UI·API 서버·에이전트의 목표 HTTP 계약을 정한다. 현재 실행 가능한 경로는 `GET /api/health`, 카테고리 조회, 거래 CRUD·가져오기와 두 AI POST 경로다. 월별 합계·채팅·초안 확인·내부 도구 경로는 후속 설계다. 거래 저장·이전의 범위와 실행법은 [서버 거래 저장](server-ledger.md)을 따른다. 실제 AI 요청·응답 예시는 [RAG 구현 문서](ai/category-rag-implementation.md)에 있다. 사용 화면과 정상 응답의 자세한 JSON 예시는 [가계부 설계 문서](agent-account-book-design.md#입력과-출력-예시)에 있다. 아래 계약은 초기 로컬 단일 사용자 버전에 적용하며, 구현 과정에서 바꾸면 두 문서를 함께 갱신한다.
+이 문서는 UI·API 서버·에이전트의 목표 HTTP 계약을 정한다. 현재 실행 가능한 경로는 `GET /api/health`, 카테고리 조회, 거래 CRUD·가져오기, 빈도·기간 비교 집계와 두 AI POST 경로다. 월별 합계·채팅·초안 확인·내부 도구 경로는 후속 설계다. 거래 저장·이전의 범위와 실행법은 [서버 거래 저장](server-ledger.md)을 따른다. 실제 AI 요청·응답 예시는 [RAG 구현 문서](ai/category-rag-implementation.md)에 있다. 사용 화면과 정상 응답의 자세한 JSON 예시는 [가계부 설계 문서](agent-account-book-design.md#입력과-출력-예시)에 있다. 아래 계약은 초기 로컬 단일 사용자 버전에 적용하며, 구현 과정에서 바꾸면 두 문서를 함께 갱신한다.
 
 ## 공통 규칙
 
@@ -22,13 +22,15 @@
 | `PATCH /api/transactions/{id}` | 변경할 거래 필드만 | `200` 수정된 거래 | `404` 없는 거래, `422` 잘못된 변경 |
 | `DELETE /api/transactions/{id}` | 본문 없음 | `204` 본문 없음 | `404` 없는 거래 |
 | `POST /api/transactions/import` | 기존 거래의 `items` 배열, 최대 100건 | `200` 가져온 건수와 건너뛴 건수 | `422` 잘못된 거래, `409` ID 충돌, `503` DB 장애 |
+| `GET /api/stats/frequency` | 필수 `from`, `to`, `type`; 선택 `category_id`, `merchant` | `200` 결제 건수·거래 날짜 수·평균 간격·회당 평균 금액 | `422` 잘못된 필터, `503` DB 장애 |
+| `GET /api/stats/compare` | 필수 `a_from`, `a_to`, `b_from`, `b_to`, `type`; 선택 `category_id` | `200` 카테고리별 두 기간 합계·차액·증감률 | `422` 잘못된 필터, `503` DB 장애 |
 | `GET /api/summary?month=YYYY-MM` | 조회할 월 | `200` 수입·지출·차액·카테고리 합계 | `422` 잘못된 월 |
 | `POST /api/chat` | `message` | `200` 답변, 거래 초안 또는 추가 질문 | `422` 빈 입력, `503` AI 서비스 장애 |
 | `POST /api/drafts/{id}/confirm` | `changes`와 `Idempotency-Key` 헤더 | `200` 확정 상태와 거래 ID | `404` 없는 초안, `410` 만료, `422` 잘못된 변경 |
 | `POST /api/transaction-draft` | 필수 `dataset_id` UUID, 문장, 기준 날짜, Asia/Seoul, 확정 거래의 최소 분류 내역 | `200` 저장 전 초안과 RAG 추천 또는 추가 질문 | `400` 잘못된 입력, `503` AI 사용 불가 |
 | `POST /api/category-recommendation` | 필수 `dataset_id` UUID, 유형, 사용처, 메모, 같은 유형의 확정 거래 분류 내역 | `200` 추천 카테고리와 근거 또는 수동 선택 안내 | `400` 잘못된 입력, `503` AI 사용 불가 |
 
-거래 API의 상세 계약은 아래 절을 따른다. 이 표 중 `/api/summary`, `/api/chat`, `/api/drafts/{id}/confirm`은 아직 구현되지 않았다. 현재 화면의 월별 합계는 서버에서 읽은 확정 거래로 UI가 계산한다. 서버 집계 API가 존재한다는 뜻은 아니다.
+거래·집계 API의 상세 계약은 아래 절을 따른다. 이 표 중 `/api/summary`, `/api/chat`, `/api/drafts/{id}/confirm`은 아직 구현되지 않았다. 현재 화면의 월별 합계는 서버에서 읽은 확정 거래로 UI가 계산한다. 빈도·기간 비교 API를 기존 화면에 자동 연결하지 않는다.
 
 ## 구현된 거래 저장 계약
 
@@ -87,9 +89,95 @@ DB·임베딩·생성 장애는 기존 추천 `unavailable` 상태로 안내한�
 
 초안 확인 요청의 `changes`는 빈 객체이거나 화면에서 바꾼 거래 필드만 포함한다. 서버는 확정 직전에 전체 거래를 다시 검증한다. 같은 초안에 동일한 확인 요청이 반복되면 새 거래를 만들지 않고 기존 `transaction_id`를 `200`으로 반환한다. 이미 확정된 초안에 서로 다른 변경을 요청하면 `409`를 반환한다. `Idempotency-Key`가 없으면 `422`를 반환한다.
 
+## 구현된 집계 계약
+
+두 GET 경로는 PostgreSQL의 확정 거래 원본을 SQL로 집계한다. Python이나 모델에 전체 거래를 전달해 세거나 합산하지 않는다. `/api/summary`를 호출하거나 재사용하지 않으며 [거래 목록 필터](#조회와-필터)와 같은 유형·카테고리·사용처 조건을 사용한다. 목록의 페이지 크기와 커서는 집계에 적용하지 않는다. localStorage에만 남아 있고 서버로 가져오지 않은 기록은 포함되지 않는다. 모델·agent·채팅 UI·내부 도구를 호출하지 않으며 새 환경 변수나 의존성도 없다.
+
+### 입력과 날짜 경계
+
+| 경로 | 필수 입력 | 선택 입력 |
+| --- | --- | --- |
+| `/api/stats/frequency` | `from`, `to`, `type` | `category_id`, `merchant` |
+| `/api/stats/compare` | `a_from`, `a_to`, `b_from`, `b_to`, `type` | `category_id` |
+
+- 날짜는 실제 달력에 존재하는 `YYYY-MM-DD`만 받는다. 상대 기간 이름은 받지 않는다. 각 기간은 시작일 ≤ 종료일이며 **양끝 포함 최대 366일**이다.
+- `type`은 `income` 또는 `expense`이며 필수다. `category_id`는 존재하고 해당 유형과 일치해야 한다.
+- 빈도의 `merchant`는 1~200자이며 대소문자를 구분하지 않는 부분 문자열이다. `%`·`_`도 문자 그대로 검색한다. `category_id`와 함께 주면 AND 조건이다.
+- 비교의 두 기간은 길이가 다르거나 겹쳐도 된다. 각 기간을 독립 집계하며 하루당 금액으로 정규화하지 않는다.
+- 중복 키, 누락된 필수 입력, 알 수 없는 입력을 거부한다. `limit`, `cursor`, 임의 SQL, 사용자 ID, `dataset_id`를 받지 않는다.
+
+### 빈도 응답
+
+`GET /api/stats/frequency?from=2026-10-01&to=2026-10-07&type=expense&category_id=cafe`의 예다. 합성 거래는 10월 1일 두 건과 10월 7일 한 건이며 합계는 15,000원이다.
+
+```json
+{
+  "from": "2026-10-01",
+  "to": "2026-10-07",
+  "type": "expense",
+  "category_id": "cafe",
+  "currency": "KRW",
+  "basis": "confirmed_transactions",
+  "payment_count": 3,
+  "active_days": 2,
+  "average_interval_days": 3.0,
+  "average_amount": 5000.0
+}
+```
+
+응답에는 적용한 필터를 포함하며 지정하지 않은 선택 필터는 생략한다. `payment_count`는 거래 기록 건수이며 실제 방문 횟수가 아니다. `active_days`는 거래가 하나 이상 있었던 서로 다른 날짜 수다. `average_interval_days`는 `(마지막 거래일 - 첫 거래일) / (결제 건수 - 1)`을 일 단위로 계산한다. 결제가 0~1건이면 null, 같은 날 여러 건이면 0이다. `average_amount`는 합계 / 결제 건수이며 0건이면 null이다. 두 평균은 SQL에서 소수 둘째 자리로 반올림해 JSON 숫자로 반환한다. 빈 결과의 건수와 날짜 수는 0이다.
+
+서버는 SQL의 십진수를 부동소수점으로 변환하지 않고 JSON 숫자로 직렬화한다. 큰 합계나 소수 평균의 정밀도를 유지해야 하는 클라이언트는 십진수·큰 정수를 보존하는 JSON 처리를 사용해야 한다. JavaScript의 기본 Number 변환은 큰 값의 정밀도를 잃을 수 있다.
+
+### 기간 비교 응답
+
+`GET /api/stats/compare?a_from=2026-09-01&a_to=2026-09-30&b_from=2026-10-01&b_to=2026-10-31&type=expense&category_id=cafe`의 합성 예다.
+
+```json
+{
+  "a": { "from": "2026-09-01", "to": "2026-09-30" },
+  "b": { "from": "2026-10-01", "to": "2026-10-31" },
+  "type": "expense",
+  "category_id": "cafe",
+  "currency": "KRW",
+  "basis": "confirmed_transactions",
+  "items": [
+    { "category_id": "cafe", "a_total": 10000, "b_total": 15000, "difference": 5000, "change_rate_percent": 50.0 }
+  ]
+}
+```
+
+A가 기준이며 `difference = b_total - a_total`, `change_rate_percent = 100 × (b_total - a_total) / a_total`이다. 합계와 차액은 정수이며 증감률은 SQL에서 소수 첫째 자리로 반올림한다. A 합계가 0이면 B와 관계없이 증감률은 null이다. 두 기간 모두 빈 경우에도 null이며 0%로 대체하지 않는다. 두 합계는 하나의 SQL 문에서 같은 DB 스냅샷으로 계산한다.
+
+`items`는 해당 유형의 모든 허용 카테고리를 ID 오름차순으로 반환하며 기록이 없는 카테고리의 두 합계·차액은 0이다. `category_id`를 지정하면 해당 항목 하나만 반환한다. 응답의 기간·유형·선택 필터·통화·자료 기준을 결과와 함께 표시한다.
+
+### 집계 오류와 요청 흐름
+
+잘못된 입력은 `422 VALIDATION_ERROR`, 허용되지 않은 Origin은 `403 FORBIDDEN_ORIGIN`, DB 연결·쿼리 실패는 `503 LEDGER_UNAVAILABLE`이다. 아래 공통 오류 응답 형태를 사용한다. DB 장애를 정상적인 0건·0원·빈 카테고리 목록으로 바꾸지 않는다.
+
+```mermaid
+sequenceDiagram
+    participant C as 요청 클라이언트
+    participant H as HTTP 라우터
+    participant U as 집계 유스케이스
+    participant R as 집계 저장소
+    participant D as PostgreSQL
+    C->>H: GET /api/stats/frequency 또는 compare
+    H->>H: Origin·중복 쿼리 검사
+    H->>U: 명시적 날짜·유형·선택 필터
+    U->>U: 필수 입력·기간·필터 검증
+    U->>R: 검증된 집계 조건
+    R->>D: 확정 거래 SQL 집계
+    D-->>R: 건수·합계·평균 또는 비교 결과
+    R-->>U: 집계 결과
+    U-->>H: 적용 조건과 결과
+    H-->>C: 200 JSON 또는 검증·DB 오류
+    Note over C,D: 모델 호출 없음
+```
+
 ## 오류 응답
 
-구현된 거래 API의 오류 응답은 다음 형태를 사용한다. 기존 두 AI 경로는 호환성을 위해 문자열 `error` 응답을 유지하며 상세 오류는 RAG 구현 문서를 따른다. 후속 브라우저용 경로도 아래 형태를 목표로 한다. `message`는 화면에 보여줄 수 있는 설명이며 내부 예외나 비밀값을 포함하지 않는다. `details`는 필요한 경우에만 포함한다.
+구현된 거래·집계 API의 오류 응답은 다음 형태를 사용한다. 기존 두 AI 경로는 호환성을 위해 문자열 `error` 응답을 유지하며 상세 오류는 RAG 구현 문서를 따른다. 후속 브라우저용 경로도 아래 형태를 목표로 한다. `message`는 화면에 보여줄 수 있는 설명이며 내부 예외나 비밀값을 포함하지 않는다. `details`는 필요한 경우에만 포함한다.
 
 ```json
 {
@@ -114,7 +202,7 @@ DB·임베딩·생성 장애는 기존 추천 `unavailable` 상태로 안내한�
 | `503` | 거래 DB 또는 AI 서비스 사용 불가 | `LEDGER_UNAVAILABLE`, `AGENT_UNAVAILABLE` |
 | `500` | 예상하지 못한 서버 오류 | `INTERNAL_ERROR` |
 
-거래 API는 현재 표준 라이브러리 HTTP 서버를 사용하며 Pydantic·FastAPI를 추가하지 않는다. 거래 JSON 본문은 최대 200,000바이트이며 POST·PATCH는 application/json만 받는다. 거래 요청의 JSON·입력 검증 실패는 422, 잘못된 출처는 403, JSON 이외 본문은 415, 요청 크기 초과는 413으로 구분한다. DB 연결·쿼리 실패는 503이며 정상적인 빈 거래 목록으로 바꾸지 않는다. 향후 Pydantic 도입 시 기본 검증 응답도 위 형식으로 변환한다. 오류 응답의 정확한 필드와 상태 코드는 구현 테스트에서 고정한다. [FastAPI 오류 처리 문서](https://fastapi.tiangolo.com/tutorial/handling-errors/)는 요청 검증 오류와 예외 핸들러를 설명한다. AI 장애 중에도 DB가 정상이라면 직접 거래 등록·조회는 동작한다. 서버 집계 경로는 아직 미구현이다.
+거래 API는 현재 표준 라이브러리 HTTP 서버를 사용하며 Pydantic·FastAPI를 추가하지 않는다. 거래 JSON 본문은 최대 200,000바이트이며 POST·PATCH는 application/json만 받는다. 거래 요청의 JSON·입력 검증 실패는 422, 잘못된 출처는 403, JSON 이외 본문은 415, 요청 크기 초과는 413으로 구분한다. DB 연결·쿼리 실패는 503이며 정상적인 빈 거래 목록으로 바꾸지 않는다. 향후 Pydantic 도입 시 기본 검증 응답도 위 형식으로 변환한다. 오류 응답의 정확한 필드와 상태 코드는 구현 테스트에서 고정한다. [FastAPI 오류 처리 문서](https://fastapi.tiangolo.com/tutorial/handling-errors/)는 요청 검증 오류와 예외 핸들러를 설명한다. AI 장애 중에도 DB가 정상이라면 직접 거래 등록·조회는 동작한다. 빈도·기간 비교 집계 경로에도 같은 DB 오류 구분을 적용한다. 월별 summary 경로는 아직 미구현이다.
 
 ## 서비스 내부 계약
 
