@@ -25,6 +25,14 @@ test('real chat sends only the question and parses trusted table cells as plain 
   }
 })
 
+test('browser fetch is invoked without the ChatAgent instance as receiver', async () => {
+  const browserFetch: typeof fetch = async function (this: unknown) {
+    if (this !== undefined) throw new TypeError('Illegal invocation')
+    return stream(event('message', final) + event('done'))
+  }
+  assert.equal((await new ChatAgent(browserFetch).ask('질문', '', [])).reply, final.reply)
+})
+
 test('SSE parser handles split UTF-8 and CRLF frame boundaries', async () => {
   const bytes = new TextEncoder().encode((event('message', final) + event('done')).replaceAll('\n', '\r\n'))
   const body = new ReadableStream<Uint8Array>({

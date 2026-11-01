@@ -7,7 +7,7 @@ export class ChatAgent {
   private timeoutMs: number
 
   constructor(send: typeof fetch = fetch, timeoutMs = 30000) {
-    this.send = send
+    this.send = (input, options) => send(input, options)
     this.timeoutMs = timeoutMs
   }
 
