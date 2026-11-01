@@ -2,6 +2,8 @@
 
 RAG 카테고리 추천, 채팅 통계, 규칙 통계와 [Plan-and-Execute](plan-and-execute.md)가
 공유할 서버 도구의 설계다. 현재 도구 서버는 구현되지 않았다.
+별도 agent 패키지의 모델 없는 채팅 조회 도구는 [구현 계약](chat-tools.md)에 따로 기록한다.
+아래 계획·규칙 도구 목록을 모두 구현했다는 의미는 아니다.
 MCP 어댑터도 [동일한 계약](mcp.md)을 사용한다.
 
 현재 거래 원본은 [서버 거래 저장](../server-ledger.md)의 PostgreSQL 거래 테이블에 있다. 별도 pgvector 검색 테이블에는 금액·날짜를 저장하지 않는다. 명시적인 날짜로 SQL 집계하는 `/api/stats/frequency`와 `/api/stats/compare`는 구현되어 있으며 [집계 HTTP 계약](../api-contract.md#구현된-집계-계약)을 따른다. 아래 인증 사용자·거래 스냅샷·공통 도구 호출은 여전히 후속 설계다. 현재 `dataset_id`는 인증 수단이 아니며 검색 저장소를 통계 원본으로 사용할 수 없다.
