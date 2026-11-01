@@ -57,3 +57,11 @@ def test_no_tool_is_executed_when_stream_delivery_consumes_deadline():
     now[0] = 21
     result = next(events)[1]
     assert result["stop_reason"] == "time" and result["observations"] == []
+
+
+def test_prompt_separates_date_display_and_unsupported_queries():
+    model = FakeModel([ModelReply({"role": "assistant", "content": "확인할게요."}, Decimal("0.01"))])
+    list(loop(model).run("질문"))
+    prompt = model.messages[0][0]["content"]
+    assert "종료 제외" in prompt and "날짜의 숫자는 답변 문장에 쓰지 않는다" in prompt
+    assert "도구도 호출하지 말고" in prompt

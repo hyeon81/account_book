@@ -34,3 +34,11 @@ def test_failure_is_not_zero_and_no_observation_cannot_support_numbers():
     assert "실패" in answer["reply"] and not answer["tables"]
     data["observations"] = []
     assert "표만" in validated_answer(data)["reply"]
+
+
+def test_requested_duration_is_exempt_only_in_its_period_phrase():
+    data = result("지난 7일 동안 3건입니다.")
+    data["observations"][0]["arguments"]["period"] = {"name": "last_n_days", "n": 7}
+    assert validated_answer(data)["reply"] == data["reply"]
+    data["reply"] = "지난 7일 동안 7건입니다."
+    assert validated_answer(data)["reply"] != data["reply"]

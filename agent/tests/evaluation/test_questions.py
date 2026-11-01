@@ -1,5 +1,6 @@
 """Synthetic cases exercise orchestration; opt-in integration evaluates model choice."""
 from collections import Counter
+from dataclasses import asdict
 from datetime import date, timezone
 from decimal import Decimal
 import json
@@ -10,6 +11,8 @@ from account_book_agent.application.model_reply import ModelReply
 from account_book_agent.application.react_loop import ReactLoop
 from account_book_agent.application.tool_executor import ToolExecutor
 from account_book_agent.application.validated_answer import validated_answer
+from account_book_agent.application.parse_tool_arguments import parse_tool_arguments
+from account_book_agent.domain.resolve_period import resolve_period
 from evaluation_api import SyntheticApi
 
 CASES = json.loads((Path(__file__).resolve().parents[2] / "evaluation/questions.json").read_text(encoding="utf-8"))
@@ -47,7 +50,7 @@ def test_thirty_cases_with_fake_model(case):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("case", CASES, ids=lambda c: str(c["id"]))
-def test_actual_model_choice_against_synthetic_api(case):
+def test_actual_model_choice_against_synthetic_api(case, record_property):
     if not os.environ.get("OPENAI_API_KEY"): pytest.skip("Inject a key explicitly; no .env is read")
     pytest.importorskip("litellm")
     from account_book_agent.infrastructure.litellm_model import LiteLlmModel
@@ -57,8 +60,39 @@ def test_actual_model_choice_against_synthetic_api(case):
     remaining = list(result["observations"])
     for expected in case["calls"]:
         match = next((item for item in remaining if item["name"] == expected["name"]
-                     and all(item["arguments"].get(k) == v for k, v in expected.items() if k != "name")), None)
+                     and equivalent_arguments(item["name"], item["arguments"], expected)), None)
         assert match is not None
         assert match["result"]["ok"]
         remaining.remove(match)
-    assert validated_answer(result)["reply"] == result["reply"]
+    answer = validated_answer(result)
+    fallback = answer["reply"] != result["reply"]
+    record_property("prose_fallback", str(fallback).lower())
+    if fallback:
+        assert answer["reply"] == "설명의 수치를 확인하지 못해 조회 결과 표만 보여드려요."
+        assert answer["tables"]  # Discarding unsupported prose is the required success behavior.
+    for observation in result["observations"]:
+        data = observation["result"]["data"]
+        table = next(t for t in answer["tables"] if t["name"] == observation["name"]
+                     and t["rows"] == data.get("items", [data]))
+        assert table is not None
+
+
+def equivalent_arguments(name, actual, expected):
+    def normalized(arguments):
+        parsed = parse_tool_arguments(name, {k: v for k, v in arguments.items() if k != "name"})
+        result = asdict(parsed)
+        if name == "search_transactions" and "limit" not in expected: result.pop("limit", None)
+        for key in ("period", "a", "b"):
+            if key in result:
+                result[key] = resolve_period(getattr(parsed, key), date(2026, 10, 6), timezone.utc).api_dates()
+        return result
+    return normalized(actual) == normalized(expected)
+
+
+def test_equivalent_explicit_month_range_preserves_filters():
+    expected = {"name": "count_frequency", "period": {"name": "month", "month": "2026-09"}, "category_id": "cafe"}
+    actual = {"period": {"name": "range", "from_date": "2026-09-01", "to_date": "2026-09-30"},
+              "category_id": "cafe", "type": "expense"}
+    assert equivalent_arguments("count_frequency", actual, expected)
+    actual["category_id"] = "food"
+    assert not equivalent_arguments("count_frequency", actual, expected)

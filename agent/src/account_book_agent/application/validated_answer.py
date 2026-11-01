@@ -9,7 +9,7 @@ NUMERIC_FIELDS = {"payment_count", "active_days", "average_interval_days", "aver
 
 
 def validated_answer(result):
-    tables, numbers, dates = [], set(), set()
+    tables, numbers, dates, duration_days = [], set(), set(), set()
     failed = False
     for observation in result["observations"]:
         envelope = observation["result"]
@@ -17,6 +17,9 @@ def validated_answer(result):
             failed = True
             continue
         data = envelope["data"]
+        for key in ("period", "a", "b"):
+            period_spec = observation["arguments"].get(key, {})
+            if period_spec.get("name") == "last_n_days": duration_days.add(period_spec["n"])
         rows = data.get("items", [data])
         clean_rows = []
         for row in rows:
@@ -40,6 +43,8 @@ def validated_answer(result):
         if scopes: tables.append({"name": "applied_filters", "rows": scopes})
     reply = result["reply"]
     checked = reply
+    for days in duration_days:
+        checked = re.sub(rf"(?:지난|최근)\s*{days}\s*일", " ", checked)
     for value in sorted(dates, key=len, reverse=True):
         checked = checked.replace(value, " ")
         parsed = datetime.fromisoformat(value)
