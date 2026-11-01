@@ -3,6 +3,7 @@ from decimal import Decimal
 from account_book_agent.application.model_reply import ModelReply
 from account_book_agent.application.react_loop import ReactLoop
 from account_book_agent.application.tool_executor import ToolExecutor
+from chat_fake_api import FakeApi
 
 
 class FakeModel:
@@ -10,12 +11,6 @@ class FakeModel:
     def call_tools(self, messages, tools, timeout):
         self.messages.append(list(messages))
         return next(self.replies)
-
-
-class FakeApi:
-    def get(self, name, parameters):
-        return {"payment_count": 3, "active_days": 2, "average_interval_days": Decimal("1.50"),
-                "average_amount": 5000, "currency": "KRW", "basis": "confirmed_transactions"}
 
 
 def call(arguments='{"period":{"name":"today"}}'):

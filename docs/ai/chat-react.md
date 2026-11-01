@@ -25,3 +25,47 @@ stdlib HTTP 서버의 POST /chat은 tool → message → done SSE를 제공한�
 ## 5. UI 호출 선택
 
 서버 전용 AGENT_BASE_URL이 있으면 기존 입력 도우미가 ChatAgent를 사용한다. 없으면 각본형 체험을 유지한다. 브라우저에는 enabled 불리언만 노출하며 내부 주소·키·거래 전체를 전달하지 않는다. 실제 호출의 실패를 각본형 성공으로 대체하지 않는다. 화면 배치는 유지하고 호출 선택과 체험/실제 연결 모두에 맞는 안내 문구만 바꾼다. 표는 기존 답변 상세 영역에 표시한다. 개발 Compose에도 같은 프록시와 설정을 연결했다.
+
+## 6. 평가와 실행
+
+agent/evaluation/questions.json은 단일 조회 15·기간 8·복합 4·거절 3건의 합성 질문이다. 기본 테스트는 가짜 모델로 실행 흐름을 검증하며 자연어 이해 성능을 증명하지 않는다. 실제 모델 선택·인자·수치 평가는 명시적으로 `python -m pytest -m integration agent/tests/evaluation`을 실행한다. 키가 프로세스에 주입되지 않으면 건너뛴다. 테스트 자체가 .env를 읽지 않는다. 실제 가계부 대신 합성 API만 사용한다.
+
+전체 검증은 `make all`, Windows에서는 동일 구현인 `python scripts/check_all.py`다. 실제 모델 평가는 별도이며 일반 검증에서 비용을 발생시키지 않는다. 현재 실제 모델 평가는 실제 .env 접근 금지에 따른 승인 검토 거절로 실행하지 못했다. oneOf 스키마의 실제 제공자 수용 여부도 그 평가에서 확인해야 한다.
+
+| 환경 변수 | 위치 | 기본값 |
+| --- | --- | --- |
+| AGENT_BASE_URL | UI 서버 | 없음(각본형); Compose는 http://agent:8001 |
+| API_BASE_URL | agent | http://api:8000 |
+| AGENT_MODEL | agent | gpt-4.1-mini |
+| AGENT_MAX_STEPS | agent | 8 |
+| AGENT_MAX_COST_USD | agent | 0.50 |
+| OPENAI_API_KEY | agent/API | 기존 비밀값, 브라우저 노출 금지 |
+
+```mermaid
+sequenceDiagram
+    participant U as 기존 입력 도우미
+    participant P as UI 프록시
+    participant A as Agent
+    participant M as LiteLLM
+    participant S as 집계 API
+    participant D as PostgreSQL
+    U->>P: message JSON
+    P->>A: POST /chat
+    A->>M: 질문과 기존 세 도구 스키마
+    M-->>A: 도구 이름과 인자
+    A-->>U: tool (이름만)
+    A->>S: 기간을 명시 날짜로 변환해 GET
+    S->>D: SQL 집계
+    D-->>S: 집계 결과
+    S-->>A: 검증된 결과 봉투
+    A->>M: 결과 봉투 그대로 전달
+    M-->>A: 답변
+    A->>A: 숫자 검증과 원본 표 생성
+    A-->>U: message, done
+```
+
+후속 SSE 재개·인증·대화 기억·쓰기·요약/예산/이상치 API는 별도 작업이다. 기존 도구 스키마는 변경하지 않았다.
+
+컨테이너는 LITELLM_LOCAL_MODEL_COST_MAP=True로 패키지의 비용표를 사용해 시작 시 원격 비용표 다운로드와 재시도를 피한다. 이는 추정 비용이며 실제 청구와 다를 수 있다. scripts/smoke_chat.py는 키와 외부 네트워크 없이 HTTP SSE부터 모델 어댑터·루프·도구 실행·수치 검증까지 합성 자료로 확인한다.
+
+최종 검증: Python 319건 통과, 기존 PostgreSQL 통합 22건은 DB 미설정으로 스킵, 실제 모델 30건은 기본 실행에서 제외했다. UI 79건, 린트·타입 검사·빌드·문서 검사와 컨테이너의 합성 HTTP SSE 요청이 통과했다. 린트에는 기존 badge Fast Refresh 경고 하나가 남는다. Windows에서는 make 실행 파일이 없어 동일한 scripts/check_all.py를 각 커밋 전에 실행했다. 실제 모델 평가는 미완료이며 그 성공을 주장하지 않는다.

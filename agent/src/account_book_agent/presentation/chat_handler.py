@@ -62,7 +62,7 @@ class ChatHandler(BaseHTTPRequestHandler):
             for event, data in self.loop_factory().run(message.strip()):
                 if event == "tool": self.emit("tool", {"name": data["name"]})
                 elif event == "result":
-                    if data["stop_reason"] == "error":
+                    if data["stop_reason"] == "error" and not data["observations"]:
                         self.emit("error", {"code": "AGENT_UNAVAILABLE", "message": "조회하지 못했어요.",
                                             "request_id": self.request_id})
                     if data["observations"] or data["stop_reason"] != "error":

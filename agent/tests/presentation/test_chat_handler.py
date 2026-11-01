@@ -4,14 +4,11 @@ from threading import Thread
 import json
 import pytest
 from account_book_agent.presentation.chat_handler import ChatHandler
+from chat_http_loop import FakeLoop
 
 
 @pytest.fixture
 def server():
-    class FakeLoop:
-        def run(self, message):
-            yield "tool", {"name": "count_frequency", "arguments": {"secret": "hidden"}}
-            yield "result", {"reply": "기간을 알려주세요.", "stop_reason": "complete", "observations": []}
     class Handler(ChatHandler):
         loop_factory = staticmethod(FakeLoop)
     instance = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -45,3 +42,9 @@ def test_invalid_request_is_rejected_before_stream(server, body):
 def test_cross_origin_and_wrong_media_are_rejected(server):
     assert request(server, '{}', {"Content-Type": "text/plain"})[0] == 415
     assert request(server, '{}', {"Content-Type": "application/json", "Origin": "https://evil.test"})[0] == 403
+
+
+def test_model_failure_uses_public_error_event(server):
+    status, data = request(server, json.dumps({"message": "fail"}))
+    assert status == 200 and "event: error" in data and "event: done" in data
+    assert "request_id" in data and "AGENT_UNAVAILABLE" in data

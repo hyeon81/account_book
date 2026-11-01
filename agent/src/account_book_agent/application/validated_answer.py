@@ -33,6 +33,7 @@ def validated_answer(result):
             end = datetime.fromisoformat(period["to"]).date() - timedelta(days=1)
             dates.update([start.isoformat(), end.isoformat()])
             scopes.append({"period": name, "from": start.isoformat(), "to": end.isoformat(),
+                           "type": observation["arguments"].get("type", "expense"),
                            **{k: v for k, v in observation["arguments"].items()
                               if k in ("type", "category_id", "merchant")},
                            "truncated": str(envelope.get("meta", {}).get("truncated", False)).lower()})

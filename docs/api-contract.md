@@ -1,6 +1,6 @@
 # 가계부 API 계약 초안
 
-이 문서는 UI·API 서버·에이전트의 목표 HTTP 계약을 정한다. 현재 실행 가능한 경로는 `GET /api/health`, 카테고리 조회, 거래 CRUD·가져오기, 빈도·기간 비교 집계와 두 AI POST 경로다. 월별 합계·채팅·초안 확인·내부 도구 경로는 후속 설계다. 거래 저장·이전의 범위와 실행법은 [서버 거래 저장](server-ledger.md)을 따른다. 실제 AI 요청·응답 예시는 [RAG 구현 문서](ai/category-rag-implementation.md)에 있다. 사용 화면과 정상 응답의 자세한 JSON 예시는 [가계부 설계 문서](agent-account-book-design.md#입력과-출력-예시)에 있다. 아래 계약은 초기 로컬 단일 사용자 버전에 적용하며, 구현 과정에서 바꾸면 두 문서를 함께 갱신한다.
+이 문서는 UI·API 서버·에이전트의 목표 HTTP 계약을 정한다. 현재 실행 가능한 경로는 `GET /api/health`, 카테고리 조회, 거래 CRUD·가져오기, 빈도·기간 비교 집계, 두 AI POST와 query 채팅 SSE다. 월별 합계·초안 확인·내부 도구 경로는 후속 설계다. 거래 저장·이전은 [서버 거래 저장](server-ledger.md), AI 분류는 [RAG 구현](ai/category-rag-implementation.md), 채팅은 [채팅 모델 구현](ai/chat-react.md)을 따른다. 초기 로컬 단일 사용자 버전에 적용한다.
 
 ## 공통 규칙
 

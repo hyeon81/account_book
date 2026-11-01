@@ -3,7 +3,7 @@ WORKDIR /app
 COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY src ./src
-ENV PYTHONPATH=/app/src PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app/src PYTHONDONTWRITEBYTECODE=1 LITELLM_LOCAL_MODEL_COST_MAP=True
 USER 10001:10001
 EXPOSE 8001
 CMD ["python", "-m", "account_book_agent.bootstrap"]
