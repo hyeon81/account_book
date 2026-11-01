@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
@@ -16,7 +16,7 @@ type Props = {
   transactions: Transaction[]
   onAdd: () => void
   onEdit: (transaction: Transaction) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<unknown>
 }
 
 export function TransactionsPage({ month, onMonthChange, transactions, onAdd, onEdit, onDelete }: Props) {
@@ -25,14 +25,18 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
   const [visible, setVisible] = useState(5)
   const [target, setTarget] = useState<Transaction | null>(null)
   const [error, setError] = useState('')
+  const deleting = useRef(false)
+  const [busy, setBusy] = useState(false)
   const filtered = filterTransactions(transactions, { month, type, categoryId })
   const items = filtered.slice(0, visible)
   const setFilterType = (value: TransactionType | 'all') => { setType(value); setCategoryId('all'); setVisible(5) }
   const changeMonth = (value: string) => { onMonthChange(value); setVisible(5) }
-  const remove = () => {
-    if (!target) return
-    try { onDelete(target.id); setTarget(null); setError('') }
+  const remove = async () => {
+    if (!target || deleting.current) return
+    deleting.current = true; setBusy(true)
+    try { await onDelete(target.id); setTarget(null); setError('') }
     catch (cause) { setError(cause instanceof Error ? cause.message : '삭제하지 못했어요.') }
+    finally { deleting.current = false; setBusy(false) }
   }
 
   return (
@@ -80,11 +84,11 @@ export function TransactionsPage({ month, onMonthChange, transactions, onAdd, on
             {visible < filtered.length && <div className="load-more"><Button variant="outline" onClick={() => setVisible((count) => count + 5)}>더 보기</Button></div>}
           </>}
       </Card>
-      <AlertDialog open={target !== null} onOpenChange={(open) => { if (!open) { setTarget(null); setError('') } }}>
+      <AlertDialog open={target !== null} onOpenChange={(open) => { if (!open && !deleting.current) { setTarget(null); setError('') } }}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>거래를 삭제할까요?</AlertDialogTitle>
           <AlertDialogDescription>{target && `${dateLabel(target.date)} · ${target.merchant || categoryFor(target.categoryId)?.name} · ${won(target.amount)}`} 기록이 삭제됩니다. 이 작업은 되돌릴 수 없어요.</AlertDialogDescription>
         </AlertDialogHeader>{error && <p className="form-error" role="alert">{error}</p>}
-          <AlertDialogFooter><AlertDialogCancel>취소</AlertDialogCancel><AlertDialogAction onClick={(event) => { event.preventDefault(); remove() }}>삭제</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel disabled={busy}>취소</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); void remove() }}>삭제</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </section>

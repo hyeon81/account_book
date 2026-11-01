@@ -50,9 +50,11 @@ export function won(amount: number): string {
 }
 
 export function seoulToday(): string {
-  return new Intl.DateTimeFormat('en-CA', {
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date())
+  }).formatToParts(new Date())
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${byType.year}-${byType.month}-${byType.day}`
 }
 
 export function monthOf(date: string): string {

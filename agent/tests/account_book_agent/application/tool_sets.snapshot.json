@@ -1,0 +1,2222 @@
+{
+  "query": [
+    {
+      "name": "compare_periods",
+      "description": "두 기간의 카테고리별 금액과 증감을 조회한다.\n한 기간의 합계만 필요할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "b": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          }
+        },
+        "required": [
+          "a",
+          "b"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "a_total": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "b_total": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "difference": {
+                  "type": "integer"
+                },
+                "change_rate_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "category_id",
+                "a_total",
+                "b_total",
+                "difference",
+                "change_rate_percent"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 30
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "items",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "count_frequency",
+      "description": "기간 안의 결제 건수·거래 날짜 수·평균을 조회한다.\n금액 합계가 필요하면 이 도구 대신 summarize_spending을 쓴다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "payment_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active_days": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "average_interval_days": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "average_amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "payment_count",
+          "active_days",
+          "average_interval_days",
+          "average_amount",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "detect_outliers",
+      "description": "서버가 판정한 특이 거래와 판정하지 못한 범주를 조회한다.\n지출의 원인이나 미래 금액을 예측할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "type": {
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "currency": {
+                  "const": "KRW"
+                },
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "merchant": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "memo": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "status": {
+                  "const": "confirmed"
+                }
+              },
+              "required": [
+                "id",
+                "date",
+                "type",
+                "amount",
+                "currency",
+                "category_id",
+                "merchant",
+                "memo",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 5
+          },
+          "unassessed_categories": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "category_id",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items",
+          "unassessed_categories"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_budget_status",
+      "description": "기간 안의 카테고리별 예산 소진율과 페이스를 조회한다.\n예산을 설정하거나 거래를 수정할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "budget_amount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "spent_amount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "utilization_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "projected_amount": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "category_id",
+                "budget_amount",
+                "spent_amount",
+                "utilization_percent",
+                "projected_amount"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 30
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "items",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "search_transactions",
+      "description": "기간과 필터에 맞는 확정 거래 목록을 조회한다.\n합계나 결제 건수만 필요할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "type": {
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "currency": {
+                  "const": "KRW"
+                },
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "merchant": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "memo": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "status": {
+                  "const": "confirmed"
+                }
+              },
+              "required": [
+                "id",
+                "date",
+                "type",
+                "amount",
+                "currency",
+                "category_id",
+                "merchant",
+                "memo",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 50
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "summarize_spending",
+      "description": "기간 안의 수입·지출 합계를 서버에서 조회한다.\n결제 건수나 거래 목록만 필요할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "income_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expense_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "balance": {
+            "type": "integer"
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "income_total",
+          "expense_total",
+          "balance",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "insight": [
+    {
+      "name": "compare_periods",
+      "description": "두 기간의 카테고리별 금액과 증감을 조회한다.\n한 기간의 합계만 필요할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "b": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          }
+        },
+        "required": [
+          "a",
+          "b"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "a_total": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "b_total": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "difference": {
+                  "type": "integer"
+                },
+                "change_rate_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "category_id",
+                "a_total",
+                "b_total",
+                "difference",
+                "change_rate_percent"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 30
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "items",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "count_frequency",
+      "description": "기간 안의 결제 건수·거래 날짜 수·평균을 조회한다.\n금액 합계가 필요하면 이 도구 대신 summarize_spending을 쓴다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "payment_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active_days": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "average_interval_days": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "average_amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "payment_count",
+          "active_days",
+          "average_interval_days",
+          "average_amount",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "detect_outliers",
+      "description": "서버가 판정한 특이 거래와 판정하지 못한 범주를 조회한다.\n지출의 원인이나 미래 금액을 예측할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "type": {
+                  "enum": [
+                    "income",
+                    "expense"
+                  ]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "currency": {
+                  "const": "KRW"
+                },
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "merchant": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "memo": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "status": {
+                  "const": "confirmed"
+                }
+              },
+              "required": [
+                "id",
+                "date",
+                "type",
+                "amount",
+                "currency",
+                "category_id",
+                "merchant",
+                "memo",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 5
+          },
+          "unassessed_categories": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "category_id",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "items",
+          "unassessed_categories"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_budget_status",
+      "description": "기간 안의 카테고리별 예산 소진율과 페이스를 조회한다.\n예산을 설정하거나 거래를 수정할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category_id": {
+                  "enum": [
+                    "salary",
+                    "other-income",
+                    "food",
+                    "cafe",
+                    "shopping",
+                    "transport",
+                    "living",
+                    "health"
+                  ]
+                },
+                "budget_amount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "spent_amount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "utilization_percent": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "projected_amount": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "category_id",
+                "budget_amount",
+                "spent_amount",
+                "utilization_percent",
+                "projected_amount"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 30
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "items",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "summarize_spending",
+      "description": "기간 안의 수입·지출 합계를 서버에서 조회한다.\n결제 건수나 거래 목록만 필요할 때는 이 도구를 쓰지 않는다.",
+      "permission": "read",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "today",
+                      "yesterday",
+                      "this_week",
+                      "last_week",
+                      "this_month",
+                      "last_month",
+                      "this_year"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "last_n_days"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  }
+                },
+                "required": [
+                  "name",
+                  "n"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "month"
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "month"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "const": "range"
+                  },
+                  "from_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "to_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "from_date",
+                  "to_date"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "default": "expense"
+          },
+          "category_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "salary",
+              "other-income",
+              "food",
+              "cafe",
+              "shopping",
+              "transport",
+              "living",
+              "health"
+            ]
+          },
+          "merchant": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "income_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expense_total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "balance": {
+            "type": "integer"
+          },
+          "currency": {
+            "const": "KRW"
+          },
+          "basis": {
+            "const": "confirmed_transactions"
+          }
+        },
+        "required": [
+          "income_total",
+          "expense_total",
+          "balance",
+          "currency",
+          "basis"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "classify": [],
+  "capture": []
+}

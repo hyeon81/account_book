@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "account-book-server"
+version = "0.3.0"
+requires-python = ">=3.11"
+dependencies = ["psycopg[binary]==3.3.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+account_book_server = ["migrations/*.sql"]

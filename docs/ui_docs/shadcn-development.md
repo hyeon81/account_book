@@ -32,7 +32,7 @@ compose 를 세팅해줘.
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-[개발 화면](http://localhost:5173)에 접속한다. 기존 `compose.yaml`의 8080 빌드 미리보기와 다른 개발 서버다. 저장소 출처가 달라 브라우저에 저장한 거래는 포트별로 분리된다.
+[개발 화면](http://localhost:5173)에 접속한다. 기존 `compose.yaml`의 8080 빌드 미리보기와 다른 개발 서버다. 같은 API·DB를 사용하면 서버 거래는 공유한다. 이전용 localStorage 백업과 RAG dataset_id는 브라우저 출처별로 분리된다.
 
 소스·테스트·설정 파일만 읽기 전용으로 연결하며 컨테이너 안에 설치한 Linux 의존성을 사용한다. 호스트 `node_modules`나 비밀 파일은 연결하지 않는다. Windows에서도 변경을 감지하도록 폴링을 활성화한다. 패키지 또는 잠금 파일을 변경했다면 `up -d --build`를 다시 실행한다.
 
@@ -45,6 +45,6 @@ docker compose -f docker-compose.dev.yml run --rm scripts pytest
 docker compose -f docker-compose.dev.yml down
 ```
 
-`scripts`는 검증용 프로필에 있어 기본 실행에서는 시작하지 않는다. 명시적인 `run scripts`로 실행한다. 종료 명령은 브라우저 저장 거래를 지우지 않는다.
+`scripts`는 검증용 프로필에 있어 기본 실행에서는 시작하지 않는다. 명시적인 `run scripts`로 실행한다. 일반 종료는 서버 거래 영속 볼륨과 브라우저 백업을 지우지 않는다. 볼륨 삭제는 서버 거래 원본도 삭제하므로 구분한다.
 
 설정 근거: [Docker 개발 컨테이너와 의존성 분리](https://docs.docker.com/compose/how-tos/file-watch/), [Vite 서버 설정](https://vite.dev/config/server-options.html).

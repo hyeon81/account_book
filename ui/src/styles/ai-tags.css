@@ -1,0 +1,18 @@
+.ai-feature-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--border); color: var(--muted-foreground); font-size: 10px; font-weight: 750; text-decoration: none; white-space: nowrap; }
+.ai-feature-tag:hover { background: var(--border); color: var(--muted-foreground); }
+.ai-feature-tag:focus-visible, .wiki-trigger:focus-visible { outline: 2px solid var(--muted-foreground); outline-offset: 3px; }
+.nav-ai-tag { margin-left: auto; font-size: 9px; background: var(--border); padding: 3px 6px; border-radius: 5px; color: var(--muted-foreground); }
+.wiki-trigger { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 7px; font-size: 12px; font-weight: 700; color: var(--muted-foreground); text-decoration: none; border: 1px solid var(--border); white-space: nowrap; }
+.wiki-trigger:hover, .wiki-trigger[aria-current="page"] { background: var(--border); }
+.feature-heading { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.ai-feature-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.ai-feature-links > a { display: inline-flex; align-items: center; gap: 5px; color: var(--muted-foreground); font-size: 11px; text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+.ai-feature-links > a:hover { color: var(--muted-foreground); }
+.ai-design-note { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px; }
+.ai-design-note strong { font-size: 12px; color: var(--muted-foreground); }
+.ai-design-note p { margin: 7px 0; }
+@media (max-width: 760px) { .top-actions { gap: 8px; } .wiki-trigger { font-size: 11px; padding: 7px; } .top-actions .mock-pill { display: none; } .nav-ai-tag { font-size: 8px; margin-left: 0; } }
+
+.assistant-ai-links { margin: -15px 0 24px; color: var(--muted-foreground); font-size: 12px; }
+.assistant-ai-links > span, .ai-design-note .ai-feature-links > span { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 760px) { .nav-item { gap: 4px; } .nav-item > span { white-space: nowrap; } .nav-ai-tag { padding: 2px 3px; } }

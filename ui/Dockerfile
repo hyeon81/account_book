@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY index.html tsconfig*.json vite.config.ts .oxlintrc.json .gitignore ./
+COPY index.html tsconfig*.json vite.config.ts chatProxy.ts .oxlintrc.json .gitignore ./
 COPY src ./src
 COPY tests ./tests
 RUN npm run build \

@@ -1,7 +1,22 @@
 name: account-book-dev
 
 services:
+  db:
+    extends:
+      file: compose.yaml
+      service: db
+  api:
+    extends:
+      file: compose.yaml
+      service: api
+  agent:
+    extends:
+      file: compose.yaml
+      service: agent
   ui:
+    depends_on:
+      api:
+        condition: service_healthy
     build:
       context: ./ui
       dockerfile: Dockerfile.dev
@@ -9,11 +24,14 @@ services:
       - "127.0.0.1:5173:5173"
     environment:
       VITE_USE_POLLING: "true"
+      API_PROXY_TARGET: http://api:8000
+      AGENT_BASE_URL: http://agent:8001
     volumes:
       - ./ui/src:/app/src:ro
       - ./ui/tests:/app/tests:ro
       - ./ui/index.html:/app/index.html:ro
       - ./ui/vite.config.ts:/app/vite.config.ts:ro
+      - ./ui/chatProxy.ts:/app/chatProxy.ts:ro
       - ./ui/tsconfig.json:/app/tsconfig.json:ro
       - ./ui/tsconfig.app.json:/app/tsconfig.app.json:ro
       - ./ui/tsconfig.node.json:/app/tsconfig.node.json:ro
@@ -29,3 +47,6 @@ services:
       file: compose.yaml
       service: scripts
     profiles: ["checks"]
+
+volumes:
+  rag-data:
