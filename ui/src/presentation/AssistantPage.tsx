@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryFor, dateLabel, won } from '@/domain/transaction'
 import type { Transaction, TransactionInput } from '@/domain/transaction'
-import { scriptedAssistant } from '@/infrastructure/scriptedAssistant'
+import { assistant } from '@/infrastructure/assistant'
 import type { MockReply } from '@/infrastructure/scriptedAssistant'
 
 type Message = { id: number; role: 'user' | 'assistant'; text: string; reply?: MockReply; confirmed?: boolean }
@@ -48,7 +48,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
     setMessages((current) => [...current, { id: userId, role: 'user', text: message }])
     try {
       const fullMessage = pendingQuestion ? `${pendingQuestion} ${message}` : message
-      const reply = await scriptedAssistant.ask(fullMessage, month, transactions)
+      const reply = await assistant.ask(fullMessage, month, transactions)
       setMessages((current) => [...current, { id: userId + 1, role: 'assistant', text: reply.reply, reply }])
       setPendingQuestion(reply.kind === 'clarification' && reply.continueContext !== false ? fullMessage : '')
     } catch (cause) {
@@ -70,7 +70,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
     <div className="ai-feature-links"><span>실제 AI 채우기와 채팅 체험의 차이</span><AiFeatureTag feature="category-rag" /><AiFeatureTag feature="chat-statistics" /></div>
     <div className="assistant-layout">
       <Card className="surface-card chat-panel">
-        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>초안을 확인하고 저장해 주세요</small></div><Badge variant="secondary" className="chat-online">목 체험</Badge></div>
+        <div className="chat-top"><span className="chat-avatar"><Sparkles size={20} /></span><div><strong>모아 도우미</strong><small>초안을 확인하고 저장해 주세요</small></div><Badge variant="secondary" className="chat-online">도우미</Badge></div>
         <div className="chat-messages" aria-live="polite">
           {messages.length === 0 && <div className="chat-welcome"><h2>한 문장으로 기록하세요.</h2><p>거래를 적거나 궁금한 지출을 물어보세요.<br />저장하기 전에 내용을 수정할 수 있어요.</p>
             <div className="suggestions">{examples.map(({ icon: Icon, title, prompt }) => <Button key={prompt} variant="outline" onClick={() => void send(prompt)}><span className="suggestion-icon"><Icon size={19} /></span><span className="suggestion-copy"><small>{title}</small><strong>{prompt}</strong></span><ArrowRight size={16} /></Button>)}</div>
@@ -98,7 +98,7 @@ export function AssistantPage({ month, transactions, onConfirmDraft, onEditDraft
             <Textarea id="chat-input" placeholder="카드 문자 또는 오늘 오후 3시에 카페에서 5천원 썼어" rows={3} value={text} onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }} />
             <Button type="submit" disabled={!text.trim() || loading} aria-label="메시지 보내기"><Send size={17} /></Button></form>
-          <small>Enter로 보내기 · Shift+Enter로 줄바꿈<br />목 체험으로, 실제 AI에 연결되지 않습니다.</small>
+          <small>Enter로 보내기 · Shift+Enter로 줄바꿈<br />연결 설정에 따라 통계 AI 또는 각본형 체험을 사용합니다.</small>
         </div>
       </Card>
     </div>

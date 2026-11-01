@@ -9,6 +9,10 @@ services:
     extends:
       file: compose.yaml
       service: api
+  agent:
+    extends:
+      file: compose.yaml
+      service: agent
   ui:
     depends_on:
       api:
@@ -21,11 +25,13 @@ services:
     environment:
       VITE_USE_POLLING: "true"
       API_PROXY_TARGET: http://api:8000
+      AGENT_BASE_URL: http://agent:8001
     volumes:
       - ./ui/src:/app/src:ro
       - ./ui/tests:/app/tests:ro
       - ./ui/index.html:/app/index.html:ro
       - ./ui/vite.config.ts:/app/vite.config.ts:ro
+      - ./ui/chatProxy.ts:/app/chatProxy.ts:ro
       - ./ui/tsconfig.json:/app/tsconfig.json:ro
       - ./ui/tsconfig.app.json:/app/tsconfig.app.json:ro
       - ./ui/tsconfig.node.json:/app/tsconfig.node.json:ro

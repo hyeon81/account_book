@@ -21,3 +21,7 @@ AGENT_MAX_STEPS 기본 8, AGENT_MAX_COST_USD 기본 0.50을 사용한다. 요청
 ## 4. HTTP 경계
 
 stdlib HTTP 서버의 POST /chat은 tool → message → done SSE를 제공한다. 오류는 request_id가 있는 공개 봉투로만 전송하고 원본 모델 예외·거래 문장·키를 로그에 남기지 않는다. 도구 이벤트에는 이름만 포함한다. 입력 제한·이벤트 상세는 [API 계약](../api-contract.md#구현된-채팅-sse-계약)이 기준이다. Compose agent는 외부 포트를 공개하지 않으며 API HTTP만 호출하고 DB에 직접 접근하지 않는다.
+
+## 5. UI 호출 선택
+
+서버 전용 AGENT_BASE_URL이 있으면 기존 입력 도우미가 ChatAgent를 사용한다. 없으면 각본형 체험을 유지한다. 브라우저에는 enabled 불리언만 노출하며 내부 주소·키·거래 전체를 전달하지 않는다. 실제 호출의 실패를 각본형 성공으로 대체하지 않는다. 화면 배치는 유지하고 호출 선택과 체험/실제 연결 모두에 맞는 안내 문구만 바꾼다. 표는 기존 답변 상세 영역에 표시한다. 개발 Compose에도 같은 프록시와 설정을 연결했다.
