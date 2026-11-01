@@ -57,3 +57,37 @@ Asia/Seoul이며 호출자가 UTC+09:00 시간대 객체를 주입한다. 다른
 기존 tools.md의 계획·규칙·MCP 도구는 후속 설계로 남긴다. 이번 카탈로그는
 통계 조회 여섯 개이며 조문 검색이나 RAG 분류 도구를 추가하지 않는다.
 검증: 카탈로그 설명·스키마·입출력 모델·불변성과 null 평균을 유닛 테스트한다.
+
+## 3. 도구 실행기와 API 어댑터
+
+`ToolExecutor(api, today, timezone)`가 도구 이름·인자·call_id를 받아 엄격히 검증한다.
+날짜 경계를 해석하고 HTTP용 종료 포함 날짜로 변환한 뒤 API 포트를 한 번 호출한다.
+API 결과는 출력 스키마로 검증한 다음 불변 출력 객체로 만들고 마지막에 봉투로 변환한다.
+실행기는 재시도·DB 접근·모델 호출·거래 합산을 하지 않는다.
+
+성공 봉투는 call_id, ok=true, data, meta다. meta에는 반환 행 수, 잘림 여부,
+경과 밀리초, 실제 조회한 종료 제외 기간 경계가 있다. 목록은 입력 limit을 지키고
+8KB를 넘으면 목록을 줄여 truncated와 note를 함께 표시한다. 다음 커서가 있어도 잘림을 알린다.
+Decimal은 그대로 보존한다. 향후 HTTP/SSE 출력에서는 정확한 숫자 직렬화가 필요하다.
+
+실패 봉투는 call_id, ok=false, error(code, retryable, hint)다.
+retryable은 상위 실행기가 참고할 정보일 뿐 이 단계에서 재시도하지 않는다.
+잘못된 입력 INVALID_ARGUMENT, 미허용 도구 TOOL_NOT_ALLOWED, 없는 자료 NOT_FOUND,
+API 장애 TOOL_UNAVAILABLE, 잘못된 응답 INVALID_API_RESPONSE를 구분한다.
+예외 원문·API 응답 본문·거래 메모·비밀값은 오류 설명에 넣지 않는다.
+
+`HttpToolApi`는 서버 주소를 구성 시 주입받고 아래 세 GET 경로만 호출한다.
+모델 인자로 URL이나 경로를 받지 않으며 새 환경변수·Compose 서비스는 추가하지 않는다.
+
+| 도구 | 실제 경로 |
+| --- | --- |
+| search_transactions | GET /api/transactions |
+| count_frequency | GET /api/stats/frequency |
+| compare_periods | GET /api/stats/compare |
+
+나머지 세 도구는 실제 어댑터에서 네트워크 호출 전에 TOOL_UNAVAILABLE을 반환한다.
+없는 API를 정상 빈 결과로 위장하거나 거래 목록을 모아 Python으로 합산하지 않는다.
+해당 계약은 가짜 API로 입력·출력·오류를 검증하며 실제 API 구현은 별도 선행 작업이다.
+
+검증: 여섯 도구의 가짜 API, 날짜 변환, Decimal·null 보존, 유효하지 않은 입력·응답,
+API 장애 시 단일 호출, 행·바이트 잘림, 고정 HTTP 경로·URL 인코딩을 유닛 테스트한다.
