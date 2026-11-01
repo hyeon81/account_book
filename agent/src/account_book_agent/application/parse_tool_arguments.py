@@ -1,5 +1,4 @@
 """Turn validated JSON arguments into frozen inputs before any API call."""
-from dataclasses import fields
 from account_book_agent.domain.period_spec import PeriodSpec
 from account_book_agent.domain.tools.catalog import INPUT_TYPES, INPUT_SCHEMAS
 from .schema_validation import validate

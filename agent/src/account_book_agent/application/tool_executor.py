@@ -3,17 +3,18 @@ from dataclasses import asdict
 from datetime import date, tzinfo
 from time import monotonic
 from account_book_agent.domain.resolve_period import resolve_period
-from account_book_agent.domain.tools.catalog import TOOL_CATALOG
 from .parse_tool_arguments import parse_tool_arguments
 from .parse_tool_result import parse_tool_result
 from .tool_api import ToolApi
 from .tool_api_error import ToolApiError
 from .tool_result import observation
+from .tool_sets import names_for_mode
 
 
 class ToolExecutor:
-    def __init__(self, api: ToolApi, today: date, timezone: tzinfo, clock=monotonic):
+    def __init__(self, api: ToolApi, today: date, timezone: tzinfo, clock=monotonic, *, mode="query"):
         self.api, self.today, self.timezone, self.clock = api, today, timezone, clock
+        self.allowed_tools = names_for_mode(mode)
 
     def execute(self, name, arguments, call_id):
         started = self.clock()
@@ -28,7 +29,7 @@ class ToolExecutor:
                               "hint": hints.get(code, hints["TOOL_UNAVAILABLE"])}}
         if not isinstance(call_id, str) or not 1 <= len(call_id) <= 100:
             return failure("INVALID_ARGUMENT")
-        if not isinstance(name, str) or name not in TOOL_CATALOG:
+        if not isinstance(name, str) or name not in self.allowed_tools:
             return failure("TOOL_NOT_ALLOWED")
         try:
             parsed = parse_tool_arguments(name, arguments)
