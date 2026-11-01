@@ -20,7 +20,8 @@ def test_exact_observed_numbers_and_periods_survive(reply):
     assert answer["tables"][1]["rows"][0]["to"] == "2026-10-06"
 
 
-@pytest.mark.parametrize("reply", ["30건입니다", "평균 5001원", "증가율은 99%", "2027-12-31에 8건"])
+@pytest.mark.parametrize("reply", ["30건입니다", "평균 5001원", "증가율은 99%", "2027-12-31에 8건",
+                                 "총999개", "약888배", "증가율99퍼센트", "한글123abc"])
 def test_invented_numbers_discard_entire_prose_and_keep_tables(reply):
     answer = validated_answer(result(reply))
     assert answer["reply"] != reply and len(answer["tables"]) == 2

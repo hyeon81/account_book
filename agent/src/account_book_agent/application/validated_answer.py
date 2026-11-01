@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 import re
 
-NUMBER = re.compile(r"(?<![\w])[-+]?\d[\d,]*(?:\.\d+)?|[-+]?\d[\d,]*(?:\.\d+)?(?=[원건일%회])")
+NUMBER = re.compile(r"[-+]?\d[\d,]*(?:\.\d+)?")
 NUMERIC_FIELDS = {"payment_count", "active_days", "average_interval_days", "average_amount",
                   "amount", "a_total", "b_total", "difference", "change_rate_percent"}
 

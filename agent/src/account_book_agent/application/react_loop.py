@@ -27,7 +27,10 @@ class ReactLoop:
             if cost >= self.max_cost:
                 reason = "cost"; break
             try:
-                response = self.model.call_tools(messages, model_tools(), deadline - self.clock())
+                remaining = deadline - self.clock()
+                if remaining <= 0:
+                    reason = "time"; break
+                response = self.model.call_tools(messages, model_tools(), remaining)
                 if not response.cost_usd.is_finite() or response.cost_usd < 0:
                     raise ValueError("Invalid cost")
                 cost += response.cost_usd
@@ -58,6 +61,8 @@ class ReactLoop:
                 if not isinstance(call_id, str) or not 1 <= len(call_id) <= 100:
                     raise ValueError("Invalid call id")
                 yield "tool", {"name": name}
+                if self.clock() >= deadline:
+                    reason = "time"; break
                 # HTTP adapter receives the remaining request budget as its timeout.
                 if hasattr(self.executor.api, "timeout"):
                     self.executor.api.timeout = max(0.001, deadline - self.clock())

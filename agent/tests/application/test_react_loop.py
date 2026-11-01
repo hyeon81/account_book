@@ -53,3 +53,12 @@ def test_time_exhaustion_and_exception_do_not_invent_zero():
     times = iter([0, 21])
     assert list(loop(FakeModel([]), clock=lambda: next(times)).run("횟수"))[-1][1]["stop_reason"] == "time"
     assert list(loop(FakeModel([])).run("횟수"))[-1][1]["stop_reason"] == "error"
+
+
+def test_no_tool_is_executed_when_stream_delivery_consumes_deadline():
+    now = [0]
+    events = loop(FakeModel([call()]), clock=lambda: now[0]).run("횟수")
+    assert next(events)[0] == "tool"
+    now[0] = 21
+    result = next(events)[1]
+    assert result["stop_reason"] == "time" and result["observations"] == []

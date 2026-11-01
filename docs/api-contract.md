@@ -25,12 +25,27 @@
 | `GET /api/stats/frequency` | 필수 `from`, `to`, `type`; 선택 `category_id`, `merchant` | `200` 결제 건수·거래 날짜 수·평균 간격·회당 평균 금액 | `422` 잘못된 필터, `503` DB 장애 |
 | `GET /api/stats/compare` | 필수 `a_from`, `a_to`, `b_from`, `b_to`, `type`; 선택 `category_id` | `200` 카테고리별 두 기간 합계·차액·증감률 | `422` 잘못된 필터, `503` DB 장애 |
 | `GET /api/summary?month=YYYY-MM` | 조회할 월 | `200` 수입·지출·차액·카테고리 합계 | `422` 잘못된 월 |
-| `POST /api/chat` | `message` | `200` 답변, 거래 초안 또는 추가 질문 | `422` 빈 입력, `503` AI 서비스 장애 |
+| `POST /api/chat` | `message` | `200` 대화 통계 SSE (tool/message/error/done) | `422` 잘못된 입력, 스트림 error AI 장애 |
 | `POST /api/drafts/{id}/confirm` | `changes`와 `Idempotency-Key` 헤더 | `200` 확정 상태와 거래 ID | `404` 없는 초안, `410` 만료, `422` 잘못된 변경 |
 | `POST /api/transaction-draft` | 필수 `dataset_id` UUID, 문장, 기준 날짜, Asia/Seoul, 확정 거래의 최소 분류 내역 | `200` 저장 전 초안과 RAG 추천 또는 추가 질문 | `400` 잘못된 입력, `503` AI 사용 불가 |
 | `POST /api/category-recommendation` | 필수 `dataset_id` UUID, 유형, 사용처, 메모, 같은 유형의 확정 거래 분류 내역 | `200` 추천 카테고리와 근거 또는 수동 선택 안내 | `400` 잘못된 입력, `503` AI 사용 불가 |
 
-거래·집계 API의 상세 계약은 아래 절을 따른다. 이 표 중 `/api/summary`, `/api/chat`, `/api/drafts/{id}/confirm`은 아직 구현되지 않았다. 현재 화면의 월별 합계는 서버에서 읽은 확정 거래로 UI가 계산한다. 빈도·기간 비교 API를 기존 화면에 자동 연결하지 않는다.
+거래·집계 API의 상세 계약은 아래 절을 따른다. 이 표 중 `/api/summary`, `/api/drafts/{id}/confirm`은 아직 구현되지 않았다. 채팅은 UI 프록시가 agent의 POST /chat에 전달하며 API 서버의 라우트가 아니다. 현재 화면의 월별 합계는 서버에서 읽은 확정 거래로 UI가 계산한다.
+
+## 구현된 채팅 SSE 계약
+
+AGENT_BASE_URL이 설정된 UI 서버만 채팅을 agent로 전달한다. 요청은 message 하나만 포함하는 JSON, 공백 제외 1~4,000자, 본문 최대 20,000바이트다. 사용자 ID·SQL·모드·거래 목록은 받지 않는다. 로컬 단일 공유 가계부에만 적용하며 인증은 이번 범위 밖이다. 지원 조회는 거래 목록·결제 빈도·기간 비교다.
+
+스트림 시작 전 잘못된 본문은 422, 큰 본문은 413, 잘못된 미디어 타입은 415, 허용하지 않은 Origin은 403 JSON 오류다. 스트림 시작 후 장애는 error 이벤트다. 연결 종료 시 재시도·재개하지 않는다.
+
+| SSE 이벤트 | data |
+| --- | --- |
+| tool | name만 포함. 인자·추론·관측값 제외 |
+| message | reply, tables 배열(name, rows 객체 배열), stop_reason |
+| error | code, message, request_id. 원본 모델 예외 제외 |
+| done | null |
+
+query에서는 token·proposal을 보내지 않는다. 정상 흐름은 tool 0회 이상 → message → done이다. 숫자 검증과 부분 결과는 [채팅 모델 구현](ai/chat-react.md)을 따른다. 요청별 실행이며 이전 대화 기억·SSE 재개는 제공하지 않는다.
 
 ## 구현된 거래 저장 계약
 

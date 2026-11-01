@@ -30,6 +30,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+  agent:
+    depends_on:
+      api:
+        condition: service_healthy
+    build:
+      context: ./agent
+    environment:
+      API_BASE_URL: http://api:8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AGENT_MODEL: ${AGENT_MODEL:-gpt-4.1-mini}
+      AGENT_MAX_STEPS: ${AGENT_MAX_STEPS:-8}
+      AGENT_MAX_COST_USD: ${AGENT_MAX_COST_USD:-0.50}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
   ui:
     depends_on:
       api:
